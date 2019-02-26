@@ -1,0 +1,198 @@
+class classic_Mersenne_Twister:
+
+
+    def create_seed(self, seed):
+        
+        #Creates a seed for PRNG state
+        self.mt[0] = seed
+        for i in range(1, 624):
+            self.mt[i] = self.get32bitInteger(0x6c078965*(self.mt[i - 1]^(self.mt[i -1] >> 30)) + i)
+
+
+    def generate_internal_state(self, seed):
+        
+        #Creates a list and a seed
+        self.mt = [0 for i in range(624)]
+        self.index = 624
+        
+        #Check for valid input
+        if seed is not None:
+            self.create_seed(seed)
+        
+        self.twist()
+
+
+    def extract_a_random_32bit_sequence(self):
+
+        #Extracts a random 32bit sequence
+        if self.index >= 624:
+            self.twist()
+
+        #Shuffles bits around
+        x = self.mt[self.index]
+        x ^= x >> 11
+        x ^= (x << 7) & 0x9d2c5680
+        x ^= (x << 15) & 0xefc60000
+        x ^= x >> 18
+    
+        self.index += 1
+        
+        #Return a random sequence
+        return self.get32bitInteger(x)
+
+
+    def twist(self):
+        #Advances internal state a single step
+    
+        for i in range(624):
+            upper = 0x80000000
+            lower = 0x7fffffff
+        
+            x = self.get32bitInteger((self.mt[i] & upper) + (self.mt[(i + 1) % 624] & lower))
+            self.mt[i] = self.mt[(i+397) % 624]^(x >> 1)
+        
+            if x & 1 !=0:
+                self.mt[i] ^= 0x9908b0df
+        
+            self.index = 0
+        
+        
+    def get32bitInteger(self, x):
+        return x & 0xffffffff
+
+    
+    def get624bitInteger(self, x):
+        return x
+
+
+    def getPseudorandomIntegers(self, x, repeats):
+        
+        i=0
+        newlist=[]
+        while i<repeats:
+            number1 = self.extract_a_random_32bit_sequence()
+            number2 = self.extract_a_random_32bit_sequence()
+            list1 = [int (i) for i in str(number1)]
+            list2 = [int (i) for i in str(number2)]
+            substractedlist = [x1 - x2 for (x1, x2) in zip(list1, list2)]
+            newlist = newlist + substractedlist
+            i+=1
+        return newlist
+
+
+    def getPositivePseudorandomIntegers(self, x, repeats):
+        
+        i=0
+        newlist=[]
+        while i<repeats:
+            number1 = self.extract_a_random_32bit_sequence()
+            list1 = [int (i) for i in str(number1)]
+            newlist = newlist +list1
+            i+=1
+        return newlist
+
+
+    def getSequenceOfRealNumbers_c(self, x, repeats):
+        
+        i=0
+        newlist=[]
+        while i<repeats:
+            number1 = self.extract_a_random_32bit_sequence()
+            realnumber1 = float(number1 / 10**(len(str(number1))))
+            newlist.append(realnumber1)
+            i+=1
+        return newlist
+
+
+    def getSequenceOfRealNumbers_d(self, x, repeats):
+        
+        i=0
+        newlist=[]
+        while i<repeats:
+            number1 = self.extract_a_random_32bit_sequence()
+            realnumber1 = float(number1 / 10**(len(str(number1))))
+            number2 = self.extract_a_random_32bit_sequence()
+            realnumber2 = float(number2 / 10**(len(str(number2))))
+            realnumber3 = realnumber1 - realnumber2
+            newlist.append(realnumber3)
+            i+=1
+        return newlist
+
+
+    def getPseudorandomOscillation(self, x, repeats):
+        
+        i=0
+        newlist=[]
+        while i<repeats:
+            number1 = self.extract_a_random_32bit_sequence()
+            list1 = [int (i) for i in str(number1)]
+
+            for x in list1:
+                if (x % 2) == 0:
+                    a = 1
+                    newlist.append(a)
+                else:
+                    a = -1
+                    newlist.append(a)
+        return newlist
+
+
+#Test 
+class a(classic_Mersenne_Twister):
+    test = classic_Mersenne_Twister()
+    
+    
+    #Generates a pseudorandom state
+    #Add an integer to ()
+    test.generate_internal_state(1)
+    test.twist()
+    test.twist()
+    
+    # Picks a sequence
+    print("Test numbers:")
+    testnumber1 = test.extract_a_random_32bit_sequence()
+    print(testnumber1)
+    
+    testnumber2 = test.extract_a_random_32bit_sequence()
+    print(testnumber2)
+    
+    
+    #Sequences split into Lists
+    print("Test lists:")
+    testlist1 = [int (i) for i in str(testnumber1)]
+    testlist2 = [int (i) for i in str(testnumber2)]
+    print(type(testlist1))
+    
+
+    print(testlist1)
+    print(testlist2)
+    
+    x = 3
+    repeats = 5
+    
+    # a) Sequence of pseudorandom integers
+    testsequence = test.getPseudorandomIntegers(x, repeats)
+    print("a)")
+    print(testsequence)
+    
+    # b) Sequence of positive pseudorandom integers
+    testsequence = test.getPositivePseudorandomIntegers(x, repeats)
+    print("b) ")
+    print(testsequence)
+    
+    # c) Sequence of pseudorandom realnumbers [0,1)
+    testsequence = test.getSequenceOfRealNumbers_c(x, repeats)
+    print("c)")
+    print(testsequence)
+    
+    # d) Sequence of pseudorandom realnumbers (-1,1)
+                     
+    testsequence = test.getSequenceOfRealNumbers_d(x, repeats)
+    print("d)")
+    print(testsequence)
+    
+    # e) Sequence of pseudorandom oscillation of 1 and -1 at 50-50 probability
+    testsequence = test.getPseudorandomOscillation(x, repeats)
+    print("e)")
+    print(testsequence)
+    

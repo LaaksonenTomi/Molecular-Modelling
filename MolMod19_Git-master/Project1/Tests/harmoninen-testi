@@ -1,0 +1,68 @@
+import math
+
+#constants
+timestep = 0.1
+steps = 150
+mass1 = 1
+mass2 = 1
+massCM = mass1 + mass2
+spring_constant = 1
+eq_distance = 1
+
+#starting values
+velx1 = -0.1
+vely1 = 1.5
+velx2 = 0.1
+vely2 = -1
+velxCM = velx1 + velx2
+velyCM = vely1 + vely2
+x1 = 1
+y1 = 0
+x2 = -1
+y2 = 0
+xcm = (x1 + x2) / 2
+ycm = (y1 + y2) / 2
+
+
+#momentum UNUSED
+p1 = mass1 * math.sqrt(velx1**2+ vely1**2)
+p2 = mass2 * math.sqrt(velx2**2+ vely2**2)
+pCM = massCM * math.sqrt(velxCM**2+ velyCM**2)
+rCM = math.sqrt(xcm**2+ ycm**2)
+r1 = math.sqrt(x1**2+ y1**2)- rCM
+r2 = math.sqrt(x2**2+ y2**2)- rCM
+
+#energy UNUSED
+U = abs(r1 - r2) - eq_distance
+K = p1 / (2 * mass1) + p2 / (2 * mass2)
+linear_momentum = p1 + p2
+angular_momentum = rCM * pCM + r1 * p1 + r2 * p2
+
+#opening a file
+#3 ja hiili kuvaa CM:ää, helppo poistaa
+f = open("harmonic.txt", "a")
+#defining writing step
+def writestep():
+    f.write("3\nstep: " + str(i) + "\nH "+ str(x1) + " " + str(y1) + " 0\nH "+ str(x2) + " " + str(y2) + " 0\n" + "C " + str(xcm) + " " + str(ycm) + " 0\n")
+
+#leapfrog (?)
+i = 0
+writestep()
+
+for i in range(steps):
+    xcm = xcm + velxCM * timestep
+    ycm = ycm + velyCM * timestep
+    theta = math.atan((y1 - ycm) / (x1 - xcm))
+    eqx = math.cos(theta) * (eq_distance / 2)
+    eqy = math.sin(theta) * (eq_distance / 2)
+    velx1 = velx1 - (spring_constant / mass1) * (x1 - xcm - eqx) * timestep
+    vely1 = vely1 - (spring_constant / mass2) * (y1 - ycm - eqy) * timestep
+    x1 = x1 + velx1 * timestep
+    y1 = y1 + vely1 * timestep
+    velx2 = velx2 - (spring_constant / mass2) * (x2 - xcm + eqx) * timestep
+    vely2 = vely2 - (spring_constant / mass2) * (y2 - ycm + eqy) * timestep
+    x2 = x2 + velx2 * timestep
+    y2 = y2 + vely2 * timestep
+    writestep()
+
+f.close

@@ -1,0 +1,42 @@
+import math
+#sin and cos
+def timestep():
+    for i in range(atoms):
+        a = random.random()
+        matrix[i][0] += math.cos(a * 2 * math.pi)
+        matrix[i][1] += math.sin(a * 2 * math.pi)
+        
+def timestep_Taylor_n(terms):
+    for i in range(atoms):
+        a = random.random()
+        matrix[i][0] += Taylor_cos(a, terms)
+        matrix[i][1] += Taylor_sin(a, terms)
+        
+
+def Taylor_sin(a, terms):
+    a = a
+    series = a
+    for i in range(1, terms):
+        term = (-1)**i * a**(2 * i + 1) / math.factorial(2 * i + 1)
+        series += term
+    return series
+    
+def Taylor_cos(a, terms):
+    a = a
+    series = 1
+    for i in range(1, terms):
+        term = (-1)**i * a**(2 * i) / math.factorial(2 * i)
+        series += term
+    return series
+        
+a = 1
+print(Taylor_sin(a, 1))
+print(Taylor_cos(a, 1))
+print(Taylor_sin(a, 2))
+print(Taylor_cos(a, 2))
+print(Taylor_sin(a, 3))
+print(Taylor_cos(a, 3))
+print(Taylor_sin(a, 4))
+print(Taylor_cos(a, 4))
+print(Taylor_sin(a, 5))
+print(Taylor_cos(a, 5))
