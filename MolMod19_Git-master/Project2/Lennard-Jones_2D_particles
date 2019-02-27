@@ -1,0 +1,25 @@
+import math, random
+
+particlesNumber = 10
+squareSideLength = 30
+maxStartingSpeed = 5
+epsilon = 1.77
+sigma = 4.2
+maxRay = 2.5 * sigma
+universe = [] #List of particles x, y coordinates
+speedList = [] #List of particle's speed correlated to universe
+
+for particle in range(particlesNumber): #This will generate x and y coordinates for each and also speed vectors
+  particleCoord = []
+  particleCoord.append(random.random(0, squareSideLength))
+  particleCoord.append(random.random(0, squareSideLength))
+  particleSpeed = []
+  particleSpeed.append(random.random(0, maxStartingSpeed))
+  particleSpeed.append(random.random(0, maxStartingSpeed))
+  universe.append(particleCoord)
+  speedList.append(particleSpeed)
+
+for particle in range(len(universe)):#Interaction checking
+  for secondparticle in range(particle+1, particlesNumber)
+    distance = math.sqrt((universe[particle][0] - universe[secondparticle][0])**2 + (universe[particle][1] - universe[secondparticle][1])**2)
+    if distance < maxRa
