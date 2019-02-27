@@ -8,6 +8,8 @@ sigma = 4.2
 maxRay = 2.5 * sigma
 universe = [] #List of particles x, y coordinates
 speedList = [] #List of particle's speed correlated to universe
+TimeStep = 1
+Steps = 10
 
 for particle in range(particlesNumber): #This will generate x and y coordinates for each and also speed vectors
   particleCoord = []
@@ -19,7 +21,27 @@ for particle in range(particlesNumber): #This will generate x and y coordinates 
   universe.append(particleCoord)
   speedList.append(particleSpeed)
 
-for particle in range(len(universe)):#Interaction checking
-  for secondparticle in range(particle+1, particlesNumber)
-    distance = math.sqrt((universe[particle][0] - universe[secondparticle][0])**2 + (universe[particle][1] - universe[secondparticle][1])**2)
+for p1 in range(len(universe)): #Check if there can be interaction between particles if so it applies the LJ
+  for p2 in range(p1+1, particlesNumber)
+    distance = math.sqrt((universe[p1][0] - universe[p2][0]) ** 2 + (universe[p1][1] - universe[p2][1]) ** 2)
     if distance < maxRa
+      Ftot = 24 * (epsilon ** 6) / (distance ** 7) - 48 * (epsilon ** 12) / (distance ** 13)
+      deltaX = abs(universe[p1][0]-universe[p2][0])
+      deltaY = abs(universe[p1][1]-universe[p2][1])
+      
+      if universe[p1][0] < universe[p2][0] and universe[p1][1] < universe[p2][1]: #p2 is in first quadrant
+        angle = math.acos(deltaX / distance)
+      elif universe[p1][0] > universe[p2][0] and universe[p1][1] < universe[p2][1]: #p2 is in second quadrant
+        angle = math.pi - math.acos(deltaX / distance)
+      elif universe[p1][0] > universe[p2][0] and universe[p1][1] > universe[p2][1] #p2 is in third quadrant
+        angle = math.pi + math.acos(deltaX / distance)
+      elif universe[p1][0] < universe[p2][0] and universe[p1][1] > universe[p2][1] #p2 is in fourth quadrant
+        angle = 2 * math.pi - math.acos(deltaX / distance)
+      
+      Fx = Ftot * math.cos(angle)
+      Fy = Ftot * math.sin(angle)
+      speedList[p1][0] += Fx * timeStep ** 2
+      speedList[p1][1] += Fy * timeStep ** 2
+      speedlist[p2][0] += - Fx * timeStep ** 2
+      speedlist[p2][1] += - Fy * timeStep ** 2
+    
