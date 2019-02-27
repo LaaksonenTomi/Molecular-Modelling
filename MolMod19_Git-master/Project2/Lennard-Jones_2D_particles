@@ -16,8 +16,8 @@ file.write("%s" + "\n\n" % (particlesNumber)) # First line of xyz file
 
 for particle in range(particlesNumber): #This will generate x and y coordinates for each and also speed vectors
   particleCoord = []
-  particleCoord.append(random.random(0, squareSideLength))
-  particleCoord.append(random.random(0, squareSideLength))
+  particleCoord.append(random.random(- squareSideLength / 2, squareSideLength / 2))
+  particleCoord.append(random.random(- squareSideLength / 2, squareSideLength / 2))
   particleSpeed = []
   particleSpeed.append(random.random(0, maxStartingSpeed))
   particleSpeed.append(random.random(0, maxStartingSpeed))
@@ -30,7 +30,7 @@ for step in range(steps):
 
   file.write("%s" + "\n\n" % (particlesNumber)) # Point zero
 
-  for p1 in range(len(universe)): #Check if there can be interaction between particles if so it applies the LJ
+  for p1 in range(len(universe) - 1): #Check if there can be interaction between particles if so it applies the LJ
     for p2 in range(p1+1, particlesNumber)
       distance = math.sqrt((universe[p1][0] - universe[p2][0]) ** 2 + (universe[p1][1] - universe[p2][1]) ** 2)
       if distance < maxRa
@@ -55,4 +55,11 @@ for step in range(steps):
         speedlist[p2][1] += - Fy * timeStep
     universe[p1][0] += speedList[p1][0] * timeStep
     universe[p1][1] += speedList[p1][1] * timeStep
+    
+    #if universe[p1][0] > squareSideLength / 2 #Keeps particles in the square
+    #  universe[p1][0] -= squareSideLength
+    #if universe[p1][1] > squareSideLength / 2
+    #  universe[p1][1] -= squareSideLength
+
+    
     file.write("O       %s      %s      0.00000\n" % (universe[p1][0], universe[p1][1]))
