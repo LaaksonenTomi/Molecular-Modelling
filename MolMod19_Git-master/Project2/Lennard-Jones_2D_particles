@@ -12,7 +12,7 @@ TimeStep = 1
 steps = 10
 
 file = open("Lennard-Jones_2D_particles.xyz", "wt") #Create or overwrites a file
-file.write("%s" + "\n\n" % (particlesNumber)) # Point zero
+file.write("%s" + "\n\n" % (particlesNumber)) # First line of xyz file
 
 for particle in range(particlesNumber): #This will generate x and y coordinates for each and also speed vectors
   particleCoord = []
