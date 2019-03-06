@@ -1,67 +1,122 @@
 import math, random
 
 particlesNumber = 2
-squareSideLength = 10
+sqSideLength = 20
 maxStartingSpeed = 3
 epsilon = 1.77 #Xe
 sigma = 4.1 #Xe
 maxRay = 2.5 * sigma
 universe = []  # List of particles x, y coordinates
 speedList = []  # List of particle's speed correlated to universe
+forceList = []
 timeStep = 0.01
 steps = 300
 
 file = open("Lennard-Jones_2D_particles.xyz", "wt")  # Create or overwrites a file
 file.write("%s \n\n" % particlesNumber)  # First line of xyz file
 
-for particle in range(particlesNumber):  # This will generate x and y coordinates for each and also speed vectors
-    particleCoord = []
-    particleCoord.append(random.uniform(- squareSideLength / 2, squareSideLength / 2))
-    particleCoord.append(random.uniform(- squareSideLength / 2, squareSideLength / 2))
-    particleSpeed = []
-    particleSpeed.append(random.uniform(-maxStartingSpeed, maxStartingSpeed))
-    particleSpeed.append(random.uniform(-maxStartingSpeed, maxStartingSpeed))
-    universe.append(particleCoord)
-    speedList.append(particleSpeed)
-    file.write("O       %s      %s      0.00000\n" % (universe[particle][0], universe[particle][1]))
+def main():
+    particleDispositionTEST()
+    stepProcedure(universe, speedList)
 
-for step in range(steps):
+def particleDisposition():
+    for particle in range(particlesNumber):  # This will generate x and y coordinates for each and also speed vectors
+        particleCoord = []
+        particleCoord.append(random.uniform(- sqSideLength / 2, sqSideLength / 2))
+        particleCoord.append(random.uniform(- sqSideLength / 2, sqSideLength / 2))
+        particleSpeed = []
+        particleSpeed.append(random.uniform(-maxStartingSpeed, maxStartingSpeed))
+        particleSpeed.append(random.uniform(-maxStartingSpeed, maxStartingSpeed))
+        forceList.append([0, 0])
+        universe.append(particleCoord)
+        speedList.append(particleSpeed)
+        file.write("O       %s      %s      0.00000\n" % (universe[particle][0], universe[particle][1]))
 
-    file.write("%s \n\n" % particlesNumber)  # First line of xyz file
+def particleDispositionTEST():
+    universe.append([9, 0])
+    universe.append([0, 9])
+    speedList.append([2, 0])
+    speedList.append([0, 0])
+    forceList.append([0, 0])
+    forceList.append([0, 0])
+    file.write("O       %s      %s      0.00000\n" % (universe[0][0], universe[0][1]))
+    file.write("O       %s      %s      0.00000\n" % (universe[1][0], universe[1][1]))
 
-    for p1 in range(len(universe)):  # Check if there can be interaction between particles if so it applies the LJ
-        for p2 in range(p1 + 1, particlesNumber):
-            distance = math.sqrt((universe[p1][0] - universe[p2][0]) ** 2 + (universe[p1][1] - universe[p2][1]) ** 2)
-            if distance < maxRay:
-                Ftot = - 24 * epsilon * (sigma ** 6) / (distance ** 7) + 48 * epsilon * (sigma ** 12) / (distance ** 13)
-                deltaX = abs(universe[p1][0] - universe[p2][0])
-                deltaY = abs(universe[p1][1] - universe[p2][1])
-                angle = 0
-                if universe[p1][0] < universe[p2][0] and universe[p1][1] < universe[p2][1]:  # p2 is in first quadrant
-                    angle = math.acos(deltaX / distance)
-                elif universe[p1][0] > universe[p2][0] and universe[p1][1] < universe[p2][1]:  # p2 is in second quadrant
-                    angle = math.pi - math.acos(deltaX / distance)
-                elif universe[p1][0] > universe[p2][0] and universe[p1][1] > universe[p2][1]:  # p2 is in third quadrant
-                    angle = math.pi + math.acos(deltaX / distance)
-                elif universe[p1][0] < universe[p2][0] and universe[p1][1] > universe[p2][1]: # p2 is in fourth quadrant
-                    angle = 2 * math.pi - math.acos(deltaX / distance)
+def shortestDistance(p1, p2): #Defines which is the shortest distance for the particles
+    if p1[0] > 0 and p1[1] > 0: #p1 in first quadrant
+        allp2 = []
+        allp2.append(math.sqrt((universe[p1][0] - universe[p2][0]) ** 2 + (universe[p1][1] - universe[p2][1]) ** 2))
+        allp2.append(math.sqrt((universe[p1][0] - (universe[p2][0] + sqSideLength)) ** 2 + (universe[p1][1] - universe[p2][1]) ** 2))
+        allp2.append(math.sqrt((universe[p1][0] - universe[p2][0]) ** 2 + (universe[p1][1] - (universe[p2][1] + sqSideLength) ** 2)))
+        allp2.append(math.sqrt((universe[p1][0] - (universe[p2][0] + sqSideLength)) ** 2 + (universe[p1][1] - (universe[p2][1] + sqSideLength) ** 2)))
+    elif p1[0] < 0 and p1[1] > 0: #p1 in second quadrant
+        allp2 = []
+        allp2.append(math.sqrt((universe[p1][0] - universe[p2][0]) ** 2 + (universe[p1][1] - universe[p2][1]) ** 2))
+        allp2.append(math.sqrt((universe[p1][0] - (universe[p2][0] - sqSideLength)) ** 2 + (universe[p1][1] - universe[p2][1]) ** 2))
+        allp2.append(math.sqrt((universe[p1][0] - universe[p2][0]) ** 2 + (universe[p1][1] - (universe[p2][1] + sqSideLength) ** 2)))
+        allp2.append(math.sqrt((universe[p1][0] - (universe[p2][0] - sqSideLength)) ** 2 + (universe[p1][1] - (universe[p2][1] + sqSideLength) ** 2)))
+    elif p1[0] < 0 and p1[1] < 0: #p1 in third quadrant
+        allp2 = []
+        allp2.append(math.sqrt((universe[p1][0] - universe[p2][0]) ** 2 + (universe[p1][1] - universe[p2][1]) ** 2))
+        allp2.append(math.sqrt((universe[p1][0] - (universe[p2][0] - sqSideLength)) ** 2 + (universe[p1][1] - universe[p2][1]) ** 2))
+        allp2.append(math.sqrt((universe[p1][0] - universe[p2][0]) ** 2 + (universe[p1][1] - (universe[p2][1] - sqSideLength) ** 2)))
+        allp2.append(math.sqrt((universe[p1][0] - (universe[p2][0] - sqSideLength)) ** 2 + (universe[p1][1] - (universe[p2][1] - sqSideLength) ** 2)))
+    elif p1[0] > 0 and p1[1] < 0: #p1 in fourth quadrant
+        allp2 = []
+        allp2.append(math.sqrt((universe[p1][0] - universe[p2][0]) ** 2 + (universe[p1][1] - universe[p2][1]) ** 2))
+        allp2.append(math.sqrt((universe[p1][0] - (universe[p2][0] + sqSideLength)) ** 2 + (universe[p1][1] - universe[p2][1]) ** 2))
+        allp2.append(math.sqrt((universe[p1][0] - universe[p2][0]) ** 2 + (universe[p1][1] - (universe[p2][1] - sqSideLength) ** 2)))
+        allp2.append(math.sqrt((universe[p1][0] - (universe[p2][0] + sqSideLength)) ** 2 + (universe[p1][1] - (universe[p2][1] - sqSideLength) ** 2)))
+    return min(allp2) #Fix it
 
-                Fx = Ftot * math.cos(angle)
-                Fy = Ftot * math.sin(angle)
-                speedList[p1][0] += Fx * timeStep
-                speedList[p1][1] += Fy * timeStep
-                speedList[p2][0] += - Fx * timeStep
-                speedList[p2][1] += - Fy * timeStep
-                print(p1, p2)
-                print(Ftot)
-                print(distance)
-                print(speedList[p1])
-        universe[p1][0] += speedList[p1][0] * timeStep
-        universe[p1][1] += speedList[p1][1] * timeStep
+def pacmanEffectCOORD(p1, p1Coor):
+    for dim in range(len(p1Coor)):
+        p1Coor[dim] += speedList[p1][dim] * timeStep
+        if p1Coor[dim] > sqSideLength / 2:
+            p1Coor[dim] -= sqSideLength
+        elif p1Coor[dim] < - sqSideLength / 2:
+            p1Coor[dim] += sqSideLength
 
-        # if universe[p1][0] > squareSideLength / 2 #Keeps particles in the square
-        #  universe[p1][0] -= squareSideLength
-        # if universe[p1][1] > squareSideLength / 2
-        #  universe[p1][1] -= squareSideLength
+def TESTPrint(p1, p2, Ftot, angle, distance, speedListp1):
+    print(p1, p2)
+    print("Total Force =", Ftot)
+    print("angle       =", angle)
+    print("Distance    =", distance)
+    print("Speed x & y =", speedListp1)
 
-        file.write("O       %s      %s      0.00000\n" % (universe[p1][0], universe[p1][1]))
+def stepProcedure(universe, speedList):
+    for step in range(steps):
+        print("Step", step)
+        file.write("%s \n\n" % particlesNumber)  # First line of xyz file
+
+        for p1 in range(len(universe)):  # Check if there can be interaction between particles if so it applies the LJ
+            for p2 in range(p1 + 1, particlesNumber):
+                distance = math.sqrt((universe[p1][0] - universe[p2][0]) ** 2 + (universe[p1][1] - universe[p2][1]) ** 2)
+                if distance < maxRay:
+                    Ftot = - 24 * epsilon * (sigma ** 6) / (distance ** 7) + 48 * epsilon * (sigma ** 12) / (distance ** 13)
+                    deltaX = abs(universe[p1][0] - universe[p2][0])
+                    deltaY = abs(universe[p1][1] - universe[p2][1])
+                    angle = 0
+                    if universe[p1][0] < universe[p2][0] and universe[p1][1] < universe[p2][1]:  # p2 is in first quadrant
+                        angle = math.acos(deltaX / distance)
+                    elif universe[p1][0] > universe[p2][0] and universe[p1][1] < universe[p2][1]:  # p2 is in second quadrant
+                        angle = math.pi - math.acos(deltaX / distance)
+                    elif universe[p1][0] > universe[p2][0] and universe[p1][1] > universe[p2][1]:  # p2 is in third quadrant
+                        angle = math.pi + math.acos(deltaX / distance)
+                    elif universe[p1][0] < universe[p2][0] and universe[p1][1] > universe[p2][1]: # p2 is in fourth quadrant
+                        angle = 2 * math.pi - math.acos(deltaX / distance)
+
+                    Fx = Ftot * math.cos(angle)
+                    Fy = Ftot * math.sin(angle)
+                    speedList[p1][0] += - Fx * timeStep
+                    speedList[p1][1] += - Fy * timeStep
+                    speedList[p2][0] += Fx * timeStep
+                    speedList[p2][1] += Fy * timeStep
+
+                    TESTPrint(p1, p2, Ftot, angle, distance, speedList[p1])
+
+            pacmanEffectCOORD(p1, universe[p1])
+
+            file.write("O       %s      %s      0.00000\n" % (universe[p1][0], universe[p1][1]))
+
+main()
