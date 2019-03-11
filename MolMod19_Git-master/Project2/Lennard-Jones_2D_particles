@@ -1,7 +1,7 @@
 import math, random
 
-particlesNumber = 2
-sqSideLength = 20
+particlesNumber = 10
+sqSideLength = 50
 maxStartingSpeed = 3
 epsilon = 1.77 #Xe
 sigma = 4.1 #Xe
@@ -10,13 +10,17 @@ universe = []  # List of particles x, y coordinates
 speedList = []  # List of particle's speed correlated to universe
 forceList = []
 timeStep = 0.01
-steps = 300
+steps = 1000
 
 file = open("Lennard-Jones_2D_particles.xyz", "wt")  # Create or overwrites a file
-file.write("%s \n\n" % particlesNumber)  # First line of xyz file
+file.write("%s \n\n" % (particlesNumber + 4))  # First line of xyz file
+file.write("Cl       %s      %s      0.00000\n" % (sqSideLength / 2, sqSideLength / 2))
+file.write("Cl       %s      %s      0.00000\n" % (sqSideLength / 2, -sqSideLength / 2))
+file.write("Cl       %s      %s      0.00000\n" % (-sqSideLength / 2, sqSideLength / 2))
+file.write("Cl       %s      %s      0.00000\n" % (-sqSideLength / 2, -sqSideLength / 2))
 
 def main():
-    particleDispositionTEST()
+    particleDisposition()
     stepProcedure(universe, speedList)
 
 def particleDisposition():
@@ -32,10 +36,11 @@ def particleDisposition():
         speedList.append(particleSpeed)
         file.write("O       %s      %s      0.00000\n" % (universe[particle][0], universe[particle][1]))
 
+
 def particleDispositionTEST():
-    universe.append([9, 0])
-    universe.append([0, 9])
-    speedList.append([2, 0])
+    universe.append([22, 0])
+    universe.append([-22, 0])
+    speedList.append([0, 0])
     speedList.append([0, 0])
     forceList.append([0, 0])
     forceList.append([0, 0])
@@ -43,31 +48,35 @@ def particleDispositionTEST():
     file.write("O       %s      %s      0.00000\n" % (universe[1][0], universe[1][1]))
 
 def shortestDistance(p1, p2): #Defines which is the shortest distance for the particles
-    if p1[0] > 0 and p1[1] > 0: #p1 in first quadrant
-        allp2 = []
-        allp2.append(math.sqrt((universe[p1][0] - universe[p2][0]) ** 2 + (universe[p1][1] - universe[p2][1]) ** 2))
-        allp2.append(math.sqrt((universe[p1][0] - (universe[p2][0] + sqSideLength)) ** 2 + (universe[p1][1] - universe[p2][1]) ** 2))
-        allp2.append(math.sqrt((universe[p1][0] - universe[p2][0]) ** 2 + (universe[p1][1] - (universe[p2][1] + sqSideLength) ** 2)))
-        allp2.append(math.sqrt((universe[p1][0] - (universe[p2][0] + sqSideLength)) ** 2 + (universe[p1][1] - (universe[p2][1] + sqSideLength) ** 2)))
-    elif p1[0] < 0 and p1[1] > 0: #p1 in second quadrant
-        allp2 = []
-        allp2.append(math.sqrt((universe[p1][0] - universe[p2][0]) ** 2 + (universe[p1][1] - universe[p2][1]) ** 2))
-        allp2.append(math.sqrt((universe[p1][0] - (universe[p2][0] - sqSideLength)) ** 2 + (universe[p1][1] - universe[p2][1]) ** 2))
-        allp2.append(math.sqrt((universe[p1][0] - universe[p2][0]) ** 2 + (universe[p1][1] - (universe[p2][1] + sqSideLength) ** 2)))
-        allp2.append(math.sqrt((universe[p1][0] - (universe[p2][0] - sqSideLength)) ** 2 + (universe[p1][1] - (universe[p2][1] + sqSideLength) ** 2)))
+    relp2 = []
+    relDeltaX = [abs(p1[0] - p2[0])]
+    if p1[0] >= 0 and p1[1] >= 0: #p1 in first quadrant
+        relp2.append(math.sqrt((p1[0] - p2[0]) ** 2 + (p1[1] - p2[1]) ** 2))
+        relp2.append(math.sqrt((p1[0] - (p2[0] + sqSideLength)) ** 2 + (p1[1] - p2[1]) ** 2))
+        relp2.append(math.sqrt((p1[0] - p2[0]) ** 2 + (p1[1] - (p2[1] + sqSideLength)) ** 2))
+        relp2.append(math.sqrt((p1[0] - (p2[0] + sqSideLength)) ** 2 + (p1[1] - (p2[1] + sqSideLength)) ** 2))
+        relDeltaX.append(abs(p1[0] - (p2[0] + sqSideLength)))
+    elif p1[0] < 0 and p1[1] >= 0: #p1 in second quadrant
+        relp2.append(math.sqrt((p1[0] - p2[0]) ** 2 + (p1[1] - p2[1]) ** 2))
+        relp2.append(math.sqrt((p1[0] - (p2[0] - sqSideLength)) ** 2 + (p1[1] - p2[1]) ** 2))
+        relp2.append(math.sqrt((p1[0] - p2[0]) ** 2 + (p1[1] - (p2[1] + sqSideLength)) ** 2))
+        relp2.append(math.sqrt((p1[0] - (p2[0] - sqSideLength)) ** 2 + (p1[1] - (p2[1] + sqSideLength)) ** 2))
+        relDeltaX.append(abs(p1[0] - (p2[0] - sqSideLength)))
     elif p1[0] < 0 and p1[1] < 0: #p1 in third quadrant
-        allp2 = []
-        allp2.append(math.sqrt((universe[p1][0] - universe[p2][0]) ** 2 + (universe[p1][1] - universe[p2][1]) ** 2))
-        allp2.append(math.sqrt((universe[p1][0] - (universe[p2][0] - sqSideLength)) ** 2 + (universe[p1][1] - universe[p2][1]) ** 2))
-        allp2.append(math.sqrt((universe[p1][0] - universe[p2][0]) ** 2 + (universe[p1][1] - (universe[p2][1] - sqSideLength) ** 2)))
-        allp2.append(math.sqrt((universe[p1][0] - (universe[p2][0] - sqSideLength)) ** 2 + (universe[p1][1] - (universe[p2][1] - sqSideLength) ** 2)))
-    elif p1[0] > 0 and p1[1] < 0: #p1 in fourth quadrant
-        allp2 = []
-        allp2.append(math.sqrt((universe[p1][0] - universe[p2][0]) ** 2 + (universe[p1][1] - universe[p2][1]) ** 2))
-        allp2.append(math.sqrt((universe[p1][0] - (universe[p2][0] + sqSideLength)) ** 2 + (universe[p1][1] - universe[p2][1]) ** 2))
-        allp2.append(math.sqrt((universe[p1][0] - universe[p2][0]) ** 2 + (universe[p1][1] - (universe[p2][1] - sqSideLength) ** 2)))
-        allp2.append(math.sqrt((universe[p1][0] - (universe[p2][0] + sqSideLength)) ** 2 + (universe[p1][1] - (universe[p2][1] - sqSideLength) ** 2)))
-    return min(allp2) #Fix it
+        relp2.append(math.sqrt((p1[0] - p2[0]) ** 2 + (p1[1] - p2[1]) ** 2))
+        relp2.append(math.sqrt((p1[0] - (p2[0] - sqSideLength)) ** 2 + (p1[1] - p2[1]) ** 2))
+        relp2.append(math.sqrt((p1[0] - p2[0]) ** 2 + (p1[1] - (p2[1] - sqSideLength)) ** 2))
+        relp2.append(math.sqrt((p1[0] - (p2[0] - sqSideLength)) ** 2 + (p1[1] - (p2[1] - sqSideLength)) ** 2))
+        relDeltaX.append(abs(p1[0] - (p2[0] - sqSideLength)))
+    elif p1[0] >= 0 and p1[1] < 0: #p1 in fourth quadrant
+        relp2.append(math.sqrt((p1[0] - p2[0]) ** 2 + (p1[1] - p2[1]) ** 2))
+        relp2.append(math.sqrt((p1[0] - (p2[0] + sqSideLength)) ** 2 + (p1[1] - p2[1]) ** 2))
+        relp2.append(math.sqrt((p1[0] - p2[0]) ** 2 + (p1[1] - (p2[1] - sqSideLength)) ** 2))
+        relp2.append(math.sqrt((p1[0] - (p2[0] + sqSideLength)) ** 2 + (p1[1] - (p2[1] - sqSideLength)) ** 2))
+        relDeltaX.append(abs(p1[0] - (p2[0] + sqSideLength)))
+    shortest = min(relp2)
+    realDeltaX = min(relDeltaX)
+    return shortest, realDeltaX #Fix it
 
 def pacmanEffectCOORD(p1, p1Coor):
     for dim in range(len(p1Coor)):
@@ -87,15 +96,19 @@ def TESTPrint(p1, p2, Ftot, angle, distance, speedListp1):
 def stepProcedure(universe, speedList):
     for step in range(steps):
         print("Step", step)
-        file.write("%s \n\n" % particlesNumber)  # First line of xyz file
+        file.write("%s \n\n" % (particlesNumber + 4))  # First line of xyz file
+        file.write("Cl       %s      %s      0.00000\n" % (sqSideLength/2, sqSideLength/2))
+        file.write("Cl       %s      %s      0.00000\n" % (sqSideLength/2, -sqSideLength/2))
+        file.write("Cl       %s      %s      0.00000\n" % (-sqSideLength/2, sqSideLength/2))
+        file.write("Cl       %s      %s      0.00000\n" % (-sqSideLength/2, -sqSideLength/2))
 
         for p1 in range(len(universe)):  # Check if there can be interaction between particles if so it applies the LJ
             for p2 in range(p1 + 1, particlesNumber):
-                distance = math.sqrt((universe[p1][0] - universe[p2][0]) ** 2 + (universe[p1][1] - universe[p2][1]) ** 2)
+                distance, deltaX = shortestDistance(universe[p1], universe[p2]) #math.sqrt((universe[p1][0] - universe[p2][0]) ** 2 + (universe[p1][1] - universe[p2][1]) ** 2)
                 if distance < maxRay:
                     Ftot = - 24 * epsilon * (sigma ** 6) / (distance ** 7) + 48 * epsilon * (sigma ** 12) / (distance ** 13)
-                    deltaX = abs(universe[p1][0] - universe[p2][0])
-                    deltaY = abs(universe[p1][1] - universe[p2][1])
+                    #deltaX = abs(universe[p1][0] - universe[p2][0])
+                    #deltaY = abs(universe[p1][1] - universe[p2][1])
                     angle = 0
                     if universe[p1][0] < universe[p2][0] and universe[p1][1] < universe[p2][1]:  # p2 is in first quadrant
                         angle = math.acos(deltaX / distance)
