@@ -14,10 +14,6 @@ import sys
 #from collections import Counter
 
 particlesNumber = 2
-#Universe universe[array][item]
-#item type = (x,y,z,vx,vy,vz,m)
-oscillator = [[0,0,0],[0,0,0]]
-#print(oscillator[0][0], oscillator[0][1])
 
 #real parameters
 k = 1.0
@@ -25,7 +21,7 @@ r_0 = 1.0
 mass_p1 = 1.0
 mass_p2 = 1.0
 t = 0.0
-dt = 0.001
+dt = 0.0001
 r = 1.0
 E_kin_p1 = 0.0
 E_kin_p2 = 0.0
@@ -34,7 +30,6 @@ E_pot = 0.0
 E_tot = 0.0
 
 #real dimension
-
 position_p1 = np.array((0,0,0))
 position_p2 = np.array((0,0,0))
 velocity_p1 = np.array((0,0,0))
@@ -64,7 +59,7 @@ position_p2 = np.array((-1,-1,0))
 velocity_p1 = np.array((1,5,-2)) #random
 velocity_p2 = np.array((-1,-4,2)) #random
 
-#Initializa
+#Initialize
 mass_p1 = 1.0
 mass_p2 = 1.0
 r_0 = 1.0
@@ -76,7 +71,7 @@ dt = 0.0001
 r = np.dot(position_p1, position_p2)
 center = np.add(position_p1,0.5*np.subtract(position_p2,position_p1))
 
-#file preperation
+#File preperation
 file = open('3D Harmonic Oscillator.xyz', 'wt')  # Create or overwrites a file
 file.write('{:} \n'.format(particlesNumber)) # First line of xyz file
 file.write('0 \n')
@@ -106,12 +101,11 @@ E_tot = E_kin_tot + E_pot
 #Time evolution
 i = 0                                         #Step in progress
 n = 100000                                     #Total steps
-dt = 0.00001                                    #Half Timestep
+dt = 0.0001                                    #Half Timestep
 save_interval = 100
 while i < n:
     if ((i % save_interval) == 0):
         file.write('{:} \n'.format(particlesNumber))  # First step to xyz file
-    #print('{:} \n\n'.format(particlesNumber))
     
     # ---- First half step ---- 
     position_p1 = position_p1 + velocity_p1*dt/2
@@ -141,16 +135,15 @@ while i < n:
     ang_mom_p1 = (position_p1 - center)*velocity_p1
     ang_mom_p2 =(position_p2 - center)*velocity_p2
     total_ang_mom = ang_mom_p1 + ang_mom_p2
-    #print momenta
+    #print (total_lin_mom, total_ang_mom)
 
     #Calculate energies
     E_kin_p1 = 0.5*mass_p1*np.linalg.norm(velocity_p1)**2
     E_kin_p2 = 0.5*mass_p2*np.linalg.norm(velocity_p2)**2
     E_kin_tot = E_kin_p1 + E_kin_p2
-    E_pot = (r-eq_r)**2 #*U0
+    E_pot = (r-eq_r)**2
     E_tot = E_kin_tot + E_pot
     #print (E_kin_p1, E_kin_p2, E_kin_tot, E_pot, E_kin_tot)
-    #print(position_p1, position_p2)
     
     
     # ---- Second half step ---- #
@@ -164,4 +157,4 @@ while i < n:
     if ((i % save_interval) == 0):
         file.write('{:} \n'.format(i))
         file.write('O {:} {:} {:} \n'.format(position_p1[0], position_p1[1], position_p1[2]))
-        file.write('O {:} {:} {:} \n'.format(position_p2[0], position_p2[1], position_p2[2]))
+        file.write('O {:} {:} {:} \n'.format(position_p2[0], position_p2[1], position_p2[2]
