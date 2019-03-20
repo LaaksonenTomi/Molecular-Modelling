@@ -1,0 +1,180 @@
+import numpy as np
+import matplotlib.pyplot as plt
+import matplotlib.animation as animation
+import pandas as pd
+from pandas import Series,DataFrame
+
+#from numpy import linalg as linis
+
+import random
+import math
+import sys
+
+#from RandomClass import Random
+#from collections import Counter
+
+#real parameters
+k = 1.0
+r_0 = 1.0
+t = 0.0
+dt = 0.001
+r = 1.0
+E_kin_p1 = 0.0
+E_kin_p2 = 0.0
+E_kin_tot = 0.0
+E_pot = 0.0
+E_tot = 0.0
+
+#real dimension
+lin_mom_p1 = np.array((0,0,0))
+lin_mom_p2 = np.array((0,0,0))
+ang_mom_p1 = np.array((0,0,0))
+ang_mom_p2 = np.array((0,0,0))
+center_mass = np.array((0,0,0))
+total_lin_mom = np.array((0,0,0))
+total_ang_mom = np.array((0,0,0))
+
+#ini -> print(x)
+
+#step -> move 0.5*t
+#step -> calc v
+#step -> move 0.5*t
+#step -> print(x)
+
+
+oscillators = 1
+particlesNumber = 2*oscillators
+#Universe universe[atom][position]
+#Speedlist speedList[atom][position]
+#Forcelist forceList[atom][position]
+i = 0
+universe = []
+speedList = []
+forceList = []
+massList = []
+if (i<particlesNumber):
+    x = random.uniform(-10,10)
+    y = random.uniform(-10,10)
+    z = random.uniform(-10,10)
+    vx = random.uniform(-10,10)
+    vy = random.uniform(-10,10)
+    vz = random.uniform(-10,10)
+    universe.append((x,y,z))
+    speedList.append((vx,vy,vz))
+    forceList.append((0,0,0))
+    massList.append(1.0)
+    x = random.uniform(-10,10)
+    y = random.uniform(-10,10)
+    z = random.uniform(-10,10)
+    vx = random.uniform(-10,10)
+    vy = random.uniform(-10,10)
+    vz = random.uniform(-10,10)
+    universe.append((x,y,z))
+    speedList.append((vx,vy,vz))
+    forceList.append((0,0,0))
+    massList.append(1.0)
+    
+    i+=1
+
+print(universe)
+#Initialize
+r_0 = 1.0
+eq_r = 1.0
+k = 1.0
+t = 0.0
+dt = 0.0001
+
+r = np.dot(universe[0], universe[1])
+center = np.add(universe[0],0.5*np.subtract(universe[1],universe[0]))
+
+#file preperation
+file = open('3D Harmonic Oscillator Universe.xyz', 'wt')  # Create or overwrites a file
+file.write('{:} \n'.format(particlesNumber)) # First line of xyz file
+file.write('0 \n')
+file.write('O {:} {:} {:} \n'.format(universe[0][0], universe[0][1], universe[0][2]))
+file.write('O {:} {:} {:} \n'.format(universe[1][0], universe[1][1], universe[1][2]))
+
+#Calculate momenta
+#lin_mom_p1 = speedList[0]*massList[0]
+#lin_mom_p2 = speedList[1]*massList[1]
+#total_lin_mom = lin_mom_p1 + lin_mom_p2
+
+#ang_mom_p1 = (universe[0] - center)*speedList[0]
+#ang_mom_p2 =(universe[1]- center)*speedList[1]
+#total_ang_mom = ang_mom_p1 + ang_mom_p2
+#print momenta
+
+#Calculate energies
+#E_kin_p1 = 0.5*mass_p1*velocity_p1**2
+#E_kin_p2 = 0.5*mass_p2*velocity_p2**2
+#E_kin_tot = E_kin_p1 + E_kin_p2
+#E_pot = (r-eq_r)**2
+#E_tot = E_kin_tot + E_pot
+#print energies
+
+
+
+#Time evolution
+i = 0                                         #Step in progress
+n = 100000                                     #Total steps
+dt = 0.0001                                    #Half Timestep
+save_interval = 100
+while i < n:
+    if ((i % save_interval) == 0):
+        file.write('{:} \n'.format(particlesNumber))  # First step to xyz file
+    #print('{:} \n'.format(particlesNumber))
+        index = 0
+        a = len(universe)
+        if (index < a):
+            # ---- First half step ---- 
+            universe[index] = universe[index] + speedList[index]*dt/2
+            universe[index + 1] = universe[index + 1] + speedList[index + 1]*dt/2
+    
+            #Calculate acceleration
+    
+            forceList[index] = -k*2*(r - eq_r)*((universe[index] - universe[index + 1]) / r)
+            forceList[index + 1] = -k*2*(r - eq_r)*((universe[index + 1] - universe[index]) / r)
+    
+            acceleration_p1 = forceList[index] / massList[index]
+            acceleration_p2 = forceList[index + 1] / massList[index + 1]
+
+            #Calculate new velocity
+            speedList[index] = speedList[index] + acceleration_p1*dt/2
+            speedList[index + 1] = speedList[index + 1] + acceleration_p2*dt/2
+
+            #Calculate distance
+            r = np.dot(universe[index], universe[index + 1])
+            center = np.add(universe[index],0.5*np.subtract(universe[index + 1],universe[index]))
+
+            #Calculate momenta
+            #lin_mom_p1 = velocity_p1*mass_p1
+            #lin_mom_p2 = velocity_p2*mass_p2
+            #total_lin_mom = lin_mom_p1 + lin_mom_p2
+
+            #ang_mom_p1 = (position_p1 - center)*velocity_p1
+            #ang_mom_p2 =(position_p2 - center)*velocity_p2
+            #total_ang_mom = ang_mom_p1 + ang_mom_p2
+            #print momenta
+
+            #Calculate energies
+            E_kin_p1 = 0.5*massList[index]*np.linalg.norm(speedList[index])**2
+            E_kin_p2 = 0.5*massList[index + 1]*2*np.linalg.norm(speedList[index + 1])**2
+            E_kin_tot = E_kin_p1 + E_kin_p2
+            E_pot = (r-eq_r)**2 #*U0
+            E_tot = E_kin_tot + E_pot
+            #print (E_kin_p1, E_kin_p2, E_kin_tot, E_pot, E_kin_tot)
+            #print(position_p1, position_p2)
+    
+    
+            # ---- Second half step ---- #
+            #Calculate new position
+            universe[index] = universe[index] + speedList[index]*dt/2
+            universe[index + 1] = universe[index + 1] + speedList[index + 1]*dt/2
+    
+            #print(position_p1[0], position_p1[1], position_p1[2])
+            #print(position_p2[0], position_p2[1], position_p2[2])
+            i += 2
+    if ((i % save_interval) == 0):
+        file.write('{:} \n'.format(i))
+        file.write('O {:} {:} {:} \n'.format(position_p1[0], position_p1[1], position_p1[2]))
+        file.write('O {:} {:} {:} \n'.format(position_p2[0], position_p2[1], position_p2[2]))
