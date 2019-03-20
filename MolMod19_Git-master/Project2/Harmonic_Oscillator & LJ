@@ -1,10 +1,10 @@
 import math, random
 
-particlesNumber = 30
+particlesNumber = 4 #30
 sqSideLength = 200
 maxStartingSpeed = 10
-epsilon = 1.7 #Xe
-sigma = 3 #Xe
+epsilon = 1.7
+sigma = 3
 maxRay = 2.5 * sigma
 universe = []  # List of particles x, y coordinates
 speedList = []  # List of particle's speed correlated to universe
@@ -14,6 +14,13 @@ steps = 10000
 k = 10
 rEq = 12
 
+#Energy & Potentials
+totHOpot = 0.0
+totLJpot = 0.0
+totKener = 0.0
+totENERGY = 0.0
+
+fileEnergy = open("2D_HarmOsc_LJ_ENERGY.txt", "wt")
 file = open("2D_HarmOsc_LJ.xyz", "wt")  # Create or overwrites a file
 file.write("%s \n\n" % (particlesNumber + 4))  # First line of xyz file
 file.write("Cl       %s      %s      0.00000\n" % (sqSideLength / 2, sqSideLength / 2))
@@ -22,10 +29,10 @@ file.write("Cl       %s      %s      0.00000\n" % (-sqSideLength / 2, sqSideLeng
 file.write("Cl       %s      %s      0.00000\n" % (-sqSideLength / 2, -sqSideLength / 2))
 
 def main():
-    particleDisposition()
-    #particleDispositionTEST()
+    #particleDisposition()
+    particleDispositionTEST()
     #specialParticleDisposition(sigma + 5)
-    stepProcedure(universe, speedList, forceList)
+    stepProcedure(universe, speedList, forceList, totKener, totHOpot, totLJpot, totENERGY)
 
 
 def particleDisposition():
@@ -190,7 +197,9 @@ def angleGen(p1, p2, distance, deltaX):
         angle = 2 * math.pi - math.acos(deltaX / distance)
     return angle
 
-def stepProcedure(universe, speedList, forceList):
+
+
+def stepProcedure(universe, speedList, forceList, totKener, totLJpot, totHOpot, totENERGY):
     for step in range(steps):
         print("Step", step)
         file.write("%s \n\n" % (particlesNumber + 4))  # First line of xyz file
@@ -207,6 +216,9 @@ def stepProcedure(universe, speedList, forceList):
                 universe[p1 + 1][dim] += speedList[p1 + 1][dim] * timeStep / 2
 
             distance, deltaX, xInv, yInv = shortestDistance(universe[p1], universe[p1 + 1])
+
+            potE_HO = (distance - rEq) ** 2
+            totHOpot += potE_HO * 2  # Both particles have but only one is calculated
 
             FtotOsc = -k * 2 * (distance - rEq)
 
@@ -234,11 +246,20 @@ def stepProcedure(universe, speedList, forceList):
                         forceList[p2][0] += Fx
                         forceList[p2][1] += Fy
 
+                        totLJpot = 0
+                        potE_LJ = 4 * epsilon * ((sigma / distance) ** 12 - (sigma / distance) ** 6)
+                        totLJpot += potE_LJ * 2  # Both particles have but only one is calculated
+
                         TESTPrint(p1, p2, Ftot, angle, distance, speedList[p1])
 
                 speedList[p1][0] += forceList[p1][0] * timeStep / 2
                 speedList[p1][1] += forceList[p1][1] * timeStep / 2
                 forceList[p1] = [0, 0]
+
+                totKener = 0
+                partSpeed = math.sqrt(speedList[p1][0] ** 2 + speedList[p1][1] ** 2)
+                kinE = 0.5 * partSpeed ** 2
+                totKener += kinE
 
                 pacmanEffectCOORD(p1, universe[p1])
                 file.write("O       %s      %s      0.00000\n" % (universe[p1][0], universe[p1][1]))
@@ -260,14 +281,27 @@ def stepProcedure(universe, speedList, forceList):
                         forceList[p2][0] += Fx
                         forceList[p2][1] += Fy
 
+                        totLJpot = 0
+                        potE_LJ = 4 * epsilon * ((sigma / distance) ** 12 - (sigma / distance) ** 6)
+                        totLJpot += potE_LJ * 2  # Both particles have but only one is calculated
+
                         TESTPrint(p1, p2, Ftot, angle, distance, speedList[p1])
 
                 speedList[p1][0] += forceList[p1][0] * timeStep / 2
                 speedList[p1][1] += forceList[p1][1] * timeStep / 2
                 forceList[p1] = [0, 0]
 
+                totKener = 0
+                partSpeed = math.sqrt(speedList[p1][0] ** 2 + speedList[p1][1] ** 2)
+                kinE = 0.5 * partSpeed ** 2
+                totKener += kinE
+
                 pacmanEffectCOORD(p1, universe[p1])
                 file.write("O       %s      %s      0.00000\n" % (universe[p1][0], universe[p1][1]))
+
+        totENERGY = 0
+        totENERGY = totLJpot + totKener + totHOpot
+        fileEnergy.write("{}       {}      {}      {}\n".format(totENERGY, totKener, totHOpot, totLJpot))
 
             #Calculate momenta
             #lin_mom_p1 = velocity_p1*mass_p1
@@ -278,22 +312,19 @@ def stepProcedure(universe, speedList, forceList):
             #ang_mom_p2 =(position_p2 - center)*velocity_p2
             #total_ang_mom = ang_mom_p1 + ang_mom_p2
             #print momenta
-def calculateEnergy(speedXY):
+
+def calculateLJpot(tLJpot, dist):
+    potE_LJ = 4 * epsilon * ((sigma / dist) ** 12 - (sigma / dist) ** 6)
+    tLJpot += potE_LJ * 2 #Both particles have but only one is calculated
+
+def calculateKener(tKener, speedXY):
     partSpeed = math.sqrt(speedXY[0] ** 2 + speedXY[1] ** 2)
     kinE = 0.5 * partSpeed ** 2
-    potE_LJ = 4 * ((sigma/distance))
-    potE_HO = (distance-rEq)**2
+    tKener += kinE
 
-
-            #Calculate energies
-            E_kin_p1 = 0.5*massList[index]*np.linalg.norm(speedList[index])**2
-            E_kin_p2 = 0.5*massList[index + 1]*2*np.linalg.norm(speedList[index + 1])**2
-            E_kin_tot = E_kin_p1 + E_kin_p2
-            E_pot = (r-eq_r)**2 #*U0
-            E_tot = E_kin_tot + E_pot
-            #print (E_kin_p1, E_kin_p2, E_kin_tot, E_pot, E_kin_tot)
-            #print(position_p1, position_p2)
-
+def calculateHOpot(tHOpot, dist):
+    potE_HO = (dist - rEq) ** 2
+    tHOpot += potE_HO * 2 #Both particles have but only one is calculated
 
 if __name__ == '__main__':
     main()
