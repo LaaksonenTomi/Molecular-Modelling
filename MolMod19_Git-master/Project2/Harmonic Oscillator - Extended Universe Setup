@@ -41,6 +41,8 @@ total_ang_mom = np.array((0,0,0))
 #step -> move 0.5*t
 #step -> print(x)
 
+# Box parameters
+BOXSIDE = 20
 
 oscillators = 1
 particlesNumber = 2*oscillators
@@ -53,9 +55,9 @@ speedList = []
 forceList = []
 massList = []
 if (i<particlesNumber):
-    x = random.uniform(-10,10)
-    y = random.uniform(-10,10)
-    z = random.uniform(-10,10)
+    x = random.uniform(-BOXSIDE/2, BOXSIDE/2)
+    y = random.uniform(-BOXSIDE/2, BOXSIDE/2)
+    z = random.uniform(0, 0)
     vx = random.uniform(-10,10)
     vy = random.uniform(-10,10)
     vz = random.uniform(-10,10)
@@ -112,7 +114,82 @@ file.write('O {:} {:} {:} \n'.format(universe[1][0], universe[1][1], universe[1]
 #E_tot = E_kin_tot + E_pot
 #print energies
 
+def pacmanEffectCOORD(p1Coor):
+#Valid also for multiple dimensions, for each dimension it checks that the x, y etc. would be in the boundaries
+#if not it substract the length of the side to make it appear within boundaries and on the opposite side
+    for dim in range(len(p1Coor)):
+        if p1Coor[dim] > BOXSIDE / 2:
+            p1Coor[dim] -= BOXSIDE
+        elif p1Coor[dim] < - BOXSIDE / 2:
+            p1Coor[dim] += BOXSIDE
 
+def shortestDistance(p1, p2):
+
+    #Defines which is the shortest distance for the particles, this is for the correct F calculation considering the boundary conditions
+    #to do so it accumulate all the possible distances and select the minor, according to where p1 is located it will check certain zones and skip others
+    #in order to save calculation.
+    
+    relp2 = [] #List of all the possible distances between p1 and p2
+    relDeltaX = [abs(p1[0] - p2[0])] #Parameter needed for the calculation of angle between p1 and p2
+    if p1[0] >= 0 and p1[1] >= 0: #p1 in first quadrant
+        relp2.append(math.sqrt((p1[0] - p2[0]) ** 2 + (p1[1] - p2[1]) ** 2)) #p1-p2 distance in normal case
+        relp2.append(math.sqrt((p1[0] - (p2[0] + sqSideLength)) ** 2 + (p1[1] - p2[1]) ** 2)) #p1-p2 distance with the p2 of the square above
+        relp2.append(math.sqrt((p1[0] - p2[0]) ** 2 + (p1[1] - (p2[1] + sqSideLength)) ** 2)) #p1-p2 distance with p2 of the right square
+        relp2.append(math.sqrt((p1[0] - (p2[0] + sqSideLength)) ** 2 + (p1[1] - (p2[1] + sqSideLength)) ** 2)) #p1-p2 distance with p2 of the rigth-top square
+        quad = 0
+    elif p1[0] < 0 and p1[1] >= 0: #p1 in second quadrant
+        relp2.append(math.sqrt((p1[0] - p2[0]) ** 2 + (p1[1] - p2[1]) ** 2)) #NORMAL
+        relp2.append(math.sqrt((p1[0] - (p2[0] - sqSideLength)) ** 2 + (p1[1] - p2[1]) ** 2)) #P2 INVERT X
+        relp2.append(math.sqrt((p1[0] - p2[0]) ** 2 + (p1[1] - (p2[1] + sqSideLength)) ** 2)) #P2 INVERT Y
+        relp2.append(math.sqrt((p1[0] - (p2[0] - sqSideLength)) ** 2 + (p1[1] - (p2[1] + sqSideLength)) ** 2)) # P2 INVERT BOTH
+        relDeltaX.append(abs(p1[0] - (p2[0] - sqSideLength)))
+        quad = 1
+    elif p1[0] < 0 and p1[1] < 0: #p1 in third quadrant
+        relp2.append(math.sqrt((p1[0] - p2[0]) ** 2 + (p1[1] - p2[1]) ** 2))
+        relp2.append(math.sqrt((p1[0] - (p2[0] - sqSideLength)) ** 2 + (p1[1] - p2[1]) ** 2))
+        relp2.append(math.sqrt((p1[0] - p2[0]) ** 2 + (p1[1] - (p2[1] - sqSideLength)) ** 2))
+        relp2.append(math.sqrt((p1[0] - (p2[0] - sqSideLength)) ** 2 + (p1[1] - (p2[1] - sqSideLength)) ** 2))
+        relDeltaX.append(abs(p1[0] - (p2[0] - sqSideLength)))
+        quad = 2
+    elif p1[0] >= 0 and p1[1] < 0: #p1 in fourth quadrant
+        relp2.append(math.sqrt((p1[0] - p2[0]) ** 2 + (p1[1] - p2[1]) ** 2))
+        relp2.append(math.sqrt((p1[0] - (p2[0] + sqSideLength)) ** 2 + (p1[1] - p2[1]) ** 2))
+        relp2.append(math.sqrt((p1[0] - p2[0]) ** 2 + (p1[1] - (p2[1] - sqSideLength)) ** 2))
+        relp2.append(math.sqrt((p1[0] - (p2[0] + sqSideLength)) ** 2 + (p1[1] - (p2[1] - sqSideLength)) ** 2))
+        relDeltaX.append(abs(p1[0] - (p2[0] + sqSideLength)))
+        quad = 3
+    shortest = min(relp2)  #Select the lowest distance
+    for poss in range(len(relp2)):
+        if shortest == relp2[poss]:
+            case = poss
+    if case == 0:
+        center = np.add(p1, 0.5 * np.subtract(p2, p1))
+    elif case == 1 and (quad == 0 or quad == 3):
+        pReal = (p2[0] + BOXSIDE, p2[1]) 
+        center = np.add(p1, 0.5 * np.subtract(pReal, p1))
+    elif case == 1 and (quad == 1 or quad == 2):
+        pReal = (p2[0] - BOXSIDE, p2[1]) 
+        center = np.add(p1, 0.5 * np.subtract(pReal, p1))    
+    elif case == 2 and (quad == 0 or quad == 1):
+        pReal = (p2[0], p2[1] + BOXSIDE) 
+        center = np.add(p1, 0.5 * np.subtract(pReal, p1))
+    elif case == 2 and (quad == 2 or quad == 3):
+        pReal = (p2[0], p2[1] - BOXSIDE) 
+        center = np.add(p1, 0.5 * np.subtract(pReal, p1))
+    elif case == 3 and quad == 0:
+        pReal = (p2[0] + BOXSIDE, p2[1] + BOXSIDE) 
+        center = np.add(p1, 0.5 * np.subtract(pReal, p1))
+    elif case == 3 and quad == 1:
+        pReal = (p2[0] - BOXSIDE, p2[1] + BOXSIDE) 
+        center = np.add(p1, 0.5 * np.subtract(pReal, p1))
+    elif case == 3 and quad == 2:
+        pReal = (p2[0] - BOXSIDE, p2[1] - BOXSIDE) 
+        center = np.add(p1, 0.5 * np.subtract(pReal, p1))
+    elif case == 3 and quad == 2:
+        pReal = (p2[0] + BOXSIDE, p2[1] - BOXSIDE) 
+        center = np.add(p1, 0.5 * np.subtract(pReal, p1))
+    pacmanEffect(center)
+return shortest, center
 
 #Time evolution
 i = 0                                         #Step in progress
@@ -127,9 +204,9 @@ while i < n:
         a = len(universe)
         if (index < a):
             # ---- First half step ---- 
-            universe[index] = universe[index] + speedList[index]*dt/2
-            universe[index + 1] = universe[index + 1] + speedList[index + 1]*dt/2
-    
+            universe[index] += speedList[index]*dt/2
+            universe[index + 1] += speedList[index + 1]*dt/2
+            
             #Calculate acceleration
     
             forceList[index] = -k*2*(r - eq_r)*((universe[index] - universe[index + 1]) / r)
@@ -143,8 +220,9 @@ while i < n:
             speedList[index + 1] = speedList[index + 1] + acceleration_p2*dt/2
 
             #Calculate distance
-            r = np.dot(universe[index], universe[index + 1])
-            center = np.add(universe[index],0.5*np.subtract(universe[index + 1],universe[index]))
+            r, center = shortestDistance(universe[index], universe[index+1])
+            #r = np.dot(universe[index], universe[index + 1])
+            #center = np.add(universe[index],0.5*np.subtract(universe[index + 1],universe[index]))
 
             #Calculate momenta
             #lin_mom_p1 = velocity_p1*mass_p1
@@ -168,8 +246,10 @@ while i < n:
     
             # ---- Second half step ---- #
             #Calculate new position
-            universe[index] = universe[index] + speedList[index]*dt/2
-            universe[index + 1] = universe[index + 1] + speedList[index + 1]*dt/2
+            universe[index] += speedList[index]*dt/2
+            universe[index + 1] += speedList[index + 1]*dt/2
+            pacmanEffect(universe[index])
+            pacmanEffect(universe[index+1])            
     
             #print(position_p1[0], position_p1[1], position_p1[2])
             #print(position_p2[0], position_p2[1], position_p2[2])
