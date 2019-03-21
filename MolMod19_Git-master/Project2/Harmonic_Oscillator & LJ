@@ -1,6 +1,6 @@
 import math, random
 
-particlesNumber = 4 #30
+particlesNumber = 30 #30
 sqSideLength = 200
 maxStartingSpeed = 10
 epsilon = 1.7
@@ -29,8 +29,8 @@ file.write("Cl       %s      %s      0.00000\n" % (-sqSideLength / 2, sqSideLeng
 file.write("Cl       %s      %s      0.00000\n" % (-sqSideLength / 2, -sqSideLength / 2))
 
 def main():
-    #particleDisposition()
-    particleDispositionTEST()
+    particleDisposition()
+    #particleDispositionTEST()
     #specialParticleDisposition(sigma + 5)
     stepProcedure(universe, speedList, forceList, totKener, totHOpot, totLJpot, totENERGY)
 
@@ -202,6 +202,10 @@ def angleGen(p1, p2, distance, deltaX):
 def stepProcedure(universe, speedList, forceList, totKener, totLJpot, totHOpot, totENERGY):
     for step in range(steps):
         print("Step", step)
+        totENERGY = 0
+        totLJpot = 0
+        totHOpot = 0
+        totKener = 0
         file.write("%s \n\n" % (particlesNumber + 4))  # First line of xyz file
         file.write("Cl       %s      %s      0.00000\n" % (sqSideLength/2, sqSideLength/2))
         file.write("Cl       %s      %s      0.00000\n" % (sqSideLength/2, -sqSideLength/2))
@@ -246,7 +250,6 @@ def stepProcedure(universe, speedList, forceList, totKener, totLJpot, totHOpot, 
                         forceList[p2][0] += Fx
                         forceList[p2][1] += Fy
 
-                        totLJpot = 0
                         potE_LJ = 4 * epsilon * ((sigma / distance) ** 12 - (sigma / distance) ** 6)
                         totLJpot += potE_LJ * 2  # Both particles have but only one is calculated
 
@@ -256,7 +259,6 @@ def stepProcedure(universe, speedList, forceList, totKener, totLJpot, totHOpot, 
                 speedList[p1][1] += forceList[p1][1] * timeStep / 2
                 forceList[p1] = [0, 0]
 
-                totKener = 0
                 partSpeed = math.sqrt(speedList[p1][0] ** 2 + speedList[p1][1] ** 2)
                 kinE = 0.5 * partSpeed ** 2
                 totKener += kinE
@@ -281,7 +283,6 @@ def stepProcedure(universe, speedList, forceList, totKener, totLJpot, totHOpot, 
                         forceList[p2][0] += Fx
                         forceList[p2][1] += Fy
 
-                        totLJpot = 0
                         potE_LJ = 4 * epsilon * ((sigma / distance) ** 12 - (sigma / distance) ** 6)
                         totLJpot += potE_LJ * 2  # Both particles have but only one is calculated
 
@@ -291,7 +292,6 @@ def stepProcedure(universe, speedList, forceList, totKener, totLJpot, totHOpot, 
                 speedList[p1][1] += forceList[p1][1] * timeStep / 2
                 forceList[p1] = [0, 0]
 
-                totKener = 0
                 partSpeed = math.sqrt(speedList[p1][0] ** 2 + speedList[p1][1] ** 2)
                 kinE = 0.5 * partSpeed ** 2
                 totKener += kinE
@@ -299,9 +299,9 @@ def stepProcedure(universe, speedList, forceList, totKener, totLJpot, totHOpot, 
                 pacmanEffectCOORD(p1, universe[p1])
                 file.write("O       %s      %s      0.00000\n" % (universe[p1][0], universe[p1][1]))
 
-        totENERGY = 0
         totENERGY = totLJpot + totKener + totHOpot
         fileEnergy.write("{}       {}      {}      {}\n".format(totENERGY, totKener, totHOpot, totLJpot))
+
 
             #Calculate momenta
             #lin_mom_p1 = velocity_p1*mass_p1
@@ -313,18 +313,6 @@ def stepProcedure(universe, speedList, forceList, totKener, totLJpot, totHOpot, 
             #total_ang_mom = ang_mom_p1 + ang_mom_p2
             #print momenta
 
-def calculateLJpot(tLJpot, dist):
-    potE_LJ = 4 * epsilon * ((sigma / dist) ** 12 - (sigma / dist) ** 6)
-    tLJpot += potE_LJ * 2 #Both particles have but only one is calculated
-
-def calculateKener(tKener, speedXY):
-    partSpeed = math.sqrt(speedXY[0] ** 2 + speedXY[1] ** 2)
-    kinE = 0.5 * partSpeed ** 2
-    tKener += kinE
-
-def calculateHOpot(tHOpot, dist):
-    potE_HO = (dist - rEq) ** 2
-    tHOpot += potE_HO * 2 #Both particles have but only one is calculated
 
 if __name__ == '__main__':
     main()
