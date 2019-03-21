@@ -157,4 +157,4 @@ while i < n:
     if ((i % save_interval) == 0):
         file.write('{:} \n'.format(i))
         file.write('O {:} {:} {:} \n'.format(position_p1[0], position_p1[1], position_p1[2]))
-        file.write('O {:} {:} {:} \n'.format(position_p2[0], position_p2[1], position_p2[2]
+        file.write('O {:} {:} {:} \n'.format(position_p2[0], position_p2[1], position_p2[2]))
