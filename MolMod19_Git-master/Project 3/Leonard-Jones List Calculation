@@ -1,165 +1,208 @@
-import math, time, random
+import numpy as np
+import time
 
-#Configuration
-particlesNumber = 10
-sqSideLength = 50
-maxStartingSpeed = 3
-epsilon = 1.0 #Xe
-sigma = 1.0 #Xe
-maxRay = 2.5 * sigma
-universe = []  # List of particles x, y, z coordinates
-speedList = []  # List of particle's speed correlated to universe
-forceList = []
-timeStep = 0.0001
-steps = 100000
-saveInterval = 1000
+starttime = time.time()
 
-file = open("Lennard-Jones_2D_particles.xyz", "wt")  # Create or overwrites a file
-file.write("%s \n\n" % (particlesNumber + 8))  # First line of xyz file
-file.write("Cl       %s      %s      %s\n" % (sqSideLength/2, sqSideLength/2, sqSideLength/2))
-file.write("Cl       %s      %s      %s\n" % (sqSideLength/2, sqSideLength/2, -sqSideLength/2))
-file.write("Cl       %s      %s      %s\n" % (sqSideLength/2, -sqSideLength/2, sqSideLength/2))
-file.write("Cl       %s      %s      %s\n" % (sqSideLength/2, -sqSideLength/2, -sqSideLength/2))
-file.write("Cl       %s      %s      %s\n" % (-sqSideLength/2, sqSideLength/2, sqSideLength/2))
-file.write("Cl       %s      %s      %s\n" % (-sqSideLength/2, sqSideLength/2, -sqSideLength/2))
-file.write("Cl       %s      %s      %s\n" % (-sqSideLength/2, -sqSideLength/2, sqSideLength/2))
-file.write("Cl       %s      %s      %s\n" % (-sqSideLength/2, -sqSideLength/2, -sqSideLength/2))
+# some testings in this file
+# give initial values here for forces and particles
 
+mass = 1  # masses of particles
+r_0 = 1  # equilibrium bond length for harmonic force
+U = 100  # some parameter for harmonic force
+sigma = 1  # Lennard jones parameter
+epsilon = 1  # Lennard jones parameter
+LJ_cutoff = 2.5 * sigma
+periodic_boundaries = True  # using periodic boundaries or not?
+xwidth = 25  # boundary sizes
+ywidth = 25
+zwidth = 25
+limits = np.array([xwidth, ywidth, 2 ** 63])  # 2**63 or any large number representing infinite dimension!
+# simulation parameters below
 
-def main():
-    particleDisposition()
-    stepProcedure(universe, speedList)
+dt = 0.0001  # timestep
+steps = 1000  # number of steps
+n = 60      # number of particles should be even
+# even number for building "diatomic molecules"
 
-def particleDisposition():
-    for particle in range(particlesNumber):  # This will generate x and y coordinates for each and also speed vectors
-        particleCoord = []
-        particleCoord.append(random.uniform(- sqSideLength / 2, sqSideLength / 2))
-        particleCoord.append(random.uniform(- sqSideLength / 2, sqSideLength / 2))
-        particleCoord.append(random.uniform(- sqSideLength / 2, sqSideLength / 2))
-        particleSpeed = []
-        particleSpeed.append(random.uniform(-maxStartingSpeed, maxStartingSpeed))
-        particleSpeed.append(random.uniform(-maxStartingSpeed, maxStartingSpeed))
-        particleSpeed.append(random.uniform(-maxStartingSpeed, maxStartingSpeed))
-        forceList.append([0, 0, 0])
-        universe.append(particleCoord)
-        speedList.append(particleSpeed)
-        file.write("O       %s      %s      %s      \n" % (universe[particle][0], universe[particle][1], universe[particle][2]))
+# used files
+vmd = True
+csv = False
+if vmd:
+    file = open("vmd.xyz", "w")
+elif csv:
+    file = open("csv.csv", "w")
+
+# initialise arrays for values with n times 3dimensional coordinates, type is a 64bit float
+pos = np.zeros((n, 3), dtype=np.float64)
+vel = np.zeros((n, 3), dtype=np.float64)
+forces = np.zeros((n, 3), dtype=np.float64)
 
 
-def particleDispositionTEST():
-    universe.append([22, 0, 0])
-    universe.append([-22, 0, 0])
-    speedList.append([0, 0, 0])
-    speedList.append([0, 0, 0])
-    forceList.append([0, 0, 0])
-    forceList.append([0, 0, 0])
-    file.write("O       %s      %s      %s      \n" % (universe[0][0], universe[0][1], universe[0][2]))
-    file.write("O       %s      %s      %s      \n" % (universe[1][0], universe[1][1], universe[1][2]))
+def generate_random_with_enough_spacing(n_generate, positions, velocities, mindist=1.0 * sigma, maxdist=2.0 * sigma):
+    made = 0
+    while made < n_generate:
+        random_position = np.random.rand(3)
+        random_position[0] *= xwidth
+        random_position[1] *= ywidth
+        random_position[2] *= zwidth  # place particles inside boundaries
+        # test if particle too far or close to other particles
+        ok = False
+        for i9 in range(n_generate):
+            distance = np.linalg.norm(random_position - positions[i9])
+            if distance < mindist:
+                # print("Particle {0} too close to some particle @ {1}".format(made, random_position))
+                break
+            elif maxdist > distance > mindist:
+                ok = True
+            if i9 == n_generate - 1 and ok:  # no collision after checks and withint good range to atleast one particle
+                positions[made] = random_position  # place particle to the position
+                velocities[made] = np.zeros(3)
+                made += 1
 
-def shortestDistance(p1, p2):
 
-#Defines which is the shortest distance for the particles, this is for the correct F calculation considering the boundary conditions
-#to do so it accumulate all the possible distances and select the minor, according to where p1 is located it will check certain zones and skip others
-#in order to save calculation.
-    relp2 = [] #List of all the possible distances between p1 and p2
-    relDeltaX = [abs(p1[0] - p2[0])] #Parameter needed for the calculation of angle between p1 and p2
-    if p1[0] >= 0 and p1[1] >= 0: #p1 in first quadrant
-        relp2.append(math.sqrt((p1[0] - p2[0]) ** 2 + (p1[1] - p2[1]) ** 2)) #p1-p2 distance in normal case
-        relp2.append(math.sqrt((p1[0] - (p2[0] + sqSideLength)) ** 2 + (p1[1] - p2[1]) ** 2)) #p1-p2 distance with the p2 of the square above
-        relp2.append(math.sqrt((p1[0] - p2[0]) ** 2 + (p1[1] - (p2[1] + sqSideLength)) ** 2)) #p1-p2 distance with p2 of the right square
-        relp2.append(math.sqrt((p1[0] - (p2[0] + sqSideLength)) ** 2 + (p1[1] - (p2[1] + sqSideLength)) ** 2)) #p1-p2 distance with p2 of the rigth-top square
-        relDeltaX.append(abs(p1[0] - (p2[0] + sqSideLength))) #append the other possible 
-    elif p1[0] < 0 and p1[1] >= 0: #p1 in second quadrant
-        relp2.append(math.sqrt((p1[0] - p2[0]) ** 2 + (p1[1] - p2[1]) ** 2))
-        relp2.append(math.sqrt((p1[0] - (p2[0] - sqSideLength)) ** 2 + (p1[1] - p2[1]) ** 2))
-        relp2.append(math.sqrt((p1[0] - p2[0]) ** 2 + (p1[1] - (p2[1] + sqSideLength)) ** 2))
-        relp2.append(math.sqrt((p1[0] - (p2[0] - sqSideLength)) ** 2 + (p1[1] - (p2[1] + sqSideLength)) ** 2))
-        relDeltaX.append(abs(p1[0] - (p2[0] - sqSideLength)))
-    elif p1[0] < 0 and p1[1] < 0: #p1 in third quadrant
-        relp2.append(math.sqrt((p1[0] - p2[0]) ** 2 + (p1[1] - p2[1]) ** 2))
-        relp2.append(math.sqrt((p1[0] - (p2[0] - sqSideLength)) ** 2 + (p1[1] - p2[1]) ** 2))
-        relp2.append(math.sqrt((p1[0] - p2[0]) ** 2 + (p1[1] - (p2[1] - sqSideLength)) ** 2))
-        relp2.append(math.sqrt((p1[0] - (p2[0] - sqSideLength)) ** 2 + (p1[1] - (p2[1] - sqSideLength)) ** 2))
-        relDeltaX.append(abs(p1[0] - (p2[0] - sqSideLength)))
-    elif p1[0] >= 0 and p1[1] < 0: #p1 in fourth quadrant
-        relp2.append(math.sqrt((p1[0] - p2[0]) ** 2 + (p1[1] - p2[1]) ** 2))
-        relp2.append(math.sqrt((p1[0] - (p2[0] + sqSideLength)) ** 2 + (p1[1] - p2[1]) ** 2))
-        relp2.append(math.sqrt((p1[0] - p2[0]) ** 2 + (p1[1] - (p2[1] - sqSideLength)) ** 2))
-        relp2.append(math.sqrt((p1[0] - (p2[0] + sqSideLength)) ** 2 + (p1[1] - (p2[1] - sqSideLength)) ** 2))
-        relDeltaX.append(abs(p1[0] - (p2[0] + sqSideLength)))
-    shortest = min(relp2)  #Select the lowest distance
-    realDeltaX = min(relDeltaX) #same here
-    return shortest, realDeltaX
+# function for harmonic force
+def harmonic_force(pos1, pos2):
+    vector_distance = distancevector(pos1, pos2)
+    scalar_distance = np.linalg.norm(vector_distance)
+    scalar_force = 2 * U * (scalar_distance - r_0)
+    vector_force = scalar_force * vector_distance / scalar_distance
+    return vector_force
 
-def pacmanEffectCOORD(p1, p1Coor):
-#Valid also for multiple dimensions, for each dimension it checks that the x, y etc. would be in the boundaries
-#if not it substract the length of the side to make it appear within boundaries and on the opposite side
-    for dim in range(len(p1Coor)):
-        p1Coor[dim] += speedList[p1][dim] * timeStep
-        if p1Coor[dim] > sqSideLength / 2:
-            p1Coor[dim] -= sqSideLength
-        elif p1Coor[dim] < - sqSideLength / 2:
-            p1Coor[dim] += sqSideLength
 
-def TESTPrint(p1, p2, Ftot, angle, distance, speedListp1):
-    print(p1, p2)
-    print("Total Force =", Ftot)
-    print("angle       =", angle)
-    print("Distance    =", distance)
-    print("Speed x & y =", speedListp1)
+def lennard_jones_force(pos1, pos2):
+    vector_distance = distancevector(pos2, pos1)
+    scalar_distance = np.linalg.norm(vector_distance)
+    if scalar_distance > LJ_cutoff:
+        return np.zeros(3)  # return a zerovector
+    r = scalar_distance
+    scalar_force = 4 * epsilon * (((sigma / r) ** 12) - ((sigma / r) ** 6))
+    vector_force = vector_distance / scalar_distance * scalar_force
+    return vector_force
 
-def stepProcedure(universe, speedList):
-    i = 0
-    for step in range(steps):
-        
-        if ((i % saveInterval) == 0):
-            print("Step", step)
-            file.write("%s \n\n" % (particlesNumber + 8))  # First line of xyz file
-            file.write("Cl       %s      %s      %s\n" % (sqSideLength/2, sqSideLength/2, sqSideLength/2))
-            file.write("Cl       %s      %s      %s\n" % (sqSideLength/2, sqSideLength/2, -sqSideLength/2))
-            file.write("Cl       %s      %s      %s\n" % (sqSideLength/2, -sqSideLength/2, sqSideLength/2))
-            file.write("Cl       %s      %s      %s\n" % (sqSideLength/2, -sqSideLength/2, -sqSideLength/2))
-            file.write("Cl       %s      %s      %s\n" % (-sqSideLength/2, sqSideLength/2, sqSideLength/2))
-            file.write("Cl       %s      %s      %s\n" % (-sqSideLength/2, sqSideLength/2, -sqSideLength/2))
-            file.write("Cl       %s      %s      %s\n" % (-sqSideLength/2, -sqSideLength/2, sqSideLength/2))
-            file.write("Cl       %s      %s      %s\n" % (-sqSideLength/2, -sqSideLength/2, -sqSideLength/2))
 
-        for p1 in range(len(universe)):  # Check if there can be interaction between particles if so it applies the LJ
-            for p2 in range(p1 + 1, particlesNumber):
-                distance, deltaX = shortestDistance(universe[p1], universe[p2]) #math.sqrt((universe[p1][0] - universe[p2][0]) ** 2 + (universe[p1][1] - universe[p2][1]) ** 2)
-                if distance < maxRay:
-                    Ftot = - 24 * epsilon * (sigma ** 6) / (distance ** 7) + 48 * epsilon * (sigma ** 12) / (distance ** 13)
-                    #deltaX = abs(universe[p1][0] - universe[p2][0])
-                    #deltaY = abs(universe[p1][1] - universe[p2][1])
-                    angle = 0
-                    if universe[p1][0] < universe[p2][0] and universe[p1][1] < universe[p2][1]:  # p2 is in first quadrant
-                        angle = math.acos(deltaX / distance)
-                    elif universe[p1][0] > universe[p2][0] and universe[p1][1] < universe[p2][1]:  # p2 is in second quadrant
-                        angle = math.pi - math.acos(deltaX / distance)
-                    elif universe[p1][0] > universe[p2][0] and universe[p1][1] > universe[p2][1]:  # p2 is in third quadrant
-                        angle = math.pi + math.acos(deltaX / distance)
-                    elif universe[p1][0] < universe[p2][0] and universe[p1][1] > universe[p2][1]: # p2 is in fourth quadrant
-                        angle = 2 * math.pi - math.acos(deltaX / distance)
+def output_vmd():
+    file.write("{0} \n\n".format(n))
+    # print(pos)
+    for particle in pos:
+        # print(particle)
+        file.write("N {0} {1} {2}\n".format(particle[0], particle[1], particle[2]))
 
-                    Fx = Ftot * math.cos(angle)
-                    Fy = Ftot * math.sin(angle)
-                    Fz = Ftot * 0
-                    speedList[p1][0] += - Fx * timeStep
-                    speedList[p1][1] += - Fy * timeStep
-                    speedList[p1][2] += - Fz * timeStep
-                    speedList[p2][0] += Fx * timeStep
-                    speedList[p2][1] += Fy * timeStep
-                    speedList[p2][2] += Fz * timeStep
 
-                    TESTPrint(p1, p2, Ftot, angle, distance, speedList[p1])
+def output_csv():
+    # implement output for kinetic and potential energy
+    # calculate kinetic energy:
+    E_kinetic = np.cumsum(0.5 * mass * np.power(vel, 2))
+    E_potential = 0
+    file.write("{0};{1}")  # separated by ; (can be read by excel)
 
-            pacmanEffectCOORD(p1, universe[p1])
 
-            if ((i % saveInterval) == 0):
-                file.write("O       %s      %s      %s\n" % (universe[p1][0], universe[p1][1], universe[p1][2]))
-        i +=1
+def distancevector(loc1, loc2, boundaries=False):
+    difference = loc2 - loc1
+    if not boundaries:  # when no PBC needed
+        return difference
+    else:  # when periodic boundary conditions are in effect:
+        if abs(difference[0]) > xwidth / 2:
+            difference[0] = - np.sign(difference[0]) * (xwidth - difference[0])
 
-start = time.time()
-main()
-end = time.time()
-print("Time:", end - start, "s")
+        if abs(difference[1]) > ywidth / 2:
+            difference[1] = - np.sign(difference[1]) * (ywidth - difference[1])
+            
+        if abs(difference[2]) > zwidth / 2:
+            difference[2] = - np.sign(difference[2]) * (zwidth - difference[1])
+        return difference
+
+
+def apply_periodic_boundary_conditions(position):
+    if position[0] < 0:
+        position[0] = xwidth - position[0]
+    elif position[0] > xwidth:
+        position[0] = position[0] - xwidth
+    if position[1] < 0:
+        position[1] = ywidth - position[1]
+    elif position[1] > ywidth:
+        position[1] = position[1] - ywidth
+    if position[2] < 0:
+        position[2] = zwidth - position[2]
+    elif position[2] > zwidth:
+        position[2] = position[2] - zwidth
+
+
+def calculate_LJ_between_all():
+    # add LJ forces for every particle
+    for i in range(n - 1):  # from first to second last
+        for i2 in range((i + 1), n):  # from current particle to last
+            LJ_between = lennard_jones_force(pos[i], pos[i2])
+            forces[i] += LJ_between
+            forces[i2] -= LJ_between  # "add" the opposite vector
+
+
+def mimimise():
+    global pos
+    global forces
+    # start with zero forces:
+    forces = np.zeros((n, 3), dtype=np.float64)
+    # calculate forces
+    calculate_LJ_between_all()
+    # steepest
+    maxforce_scalar=np.max(np.linalg.norm(forces, axis=1))
+    pos += forces / (mass * maxforce_scalar) * dt
+
+
+def progress():
+    global pos
+    global forces
+    global vel
+    
+    calculate_LJ_between_all()
+    vel = vel + forces / mass * dt
+    pos += vel * dt
+    
+    for particle in pos:
+        i = 0
+        for i in range (len(pos)) :
+            apply_periodic_boundary_conditions(pos[i])
+            i += 1
+    
+print("Generating {0} initial particle positions".format(n))
+# generate_particles(n, pos, vel) # generate 10 random particles
+generate_random_with_enough_spacing(n, pos, vel)
+
+step = 0
+saveInterval = 100
+# simulation loop
+print("Going to simulate {0} steps!".format(steps))
+while step < steps:
+
+    # output state
+    if ((step % saveInterval) == 0):
+        if vmd:
+            output_vmd()
+            print(step/steps)
+        else:
+            output_csv()
+    # zero the forces before calculating new ones!
+    # forces = np.zeros((n, 3), dtype=np.float64)
+    # calculate harmonic forces for every "molecule"
+    # for i in range(int(n/2)):
+    #     force_between_pair = harmonic_force(pos[i], pos[i+1])
+    #     forces[i*2] = force_between_pair
+    #     forces[i*2+1] = -force_between_pair
+    # add LJ forces for every particle
+    # for i in range(n - 1):  # from first to second last
+    #     for i2 in range((i + 1), n):  # from current particle to last
+    #         LJ_between = lennard_jones_force(pos[i], pos[i2])
+    #         forces[i] += LJ_between
+    #         forces[i2] -= LJ_between  # "add" the opposite vector
+    # update velocity
+    #vel = vel + forces / mass * dt
+    # update positions
+    #pos += vel * dt
+    # apply periodic boundary conditions
+    # for i in range(n):
+    #    if periodic_boundaries:
+    #        apply_periodic_boundary_conditions(pos[i])
+    # print("Step {0}".format(step))
+    #mimimise()
+    progress()
+    step += 1
+print("\nFinished! Time: {0} s".format(time.time() - starttime))
