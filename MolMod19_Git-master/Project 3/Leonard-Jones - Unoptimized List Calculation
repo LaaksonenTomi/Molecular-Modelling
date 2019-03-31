@@ -56,7 +56,7 @@ def generate_random_with_enough_spacing(n_generate, positions, velocities, mindi
                 ok = True
             if i9 == n_generate - 1 and ok:  # no collision after checks and withint good range to atleast one particle
                 positions[made] = random_position  # place particle to the position
-                velocities[made] = np.zeros(3)
+                velocities[made] = np.array([random.uniform(-1,1), random.uniform(-1,1), random.uniform(-1,1)])
                 made += 1
 
 
