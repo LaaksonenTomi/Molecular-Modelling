@@ -107,7 +107,7 @@ def pbc(n, x, y,z,systemSize):
                         y[n] = y[n] - boxsize
                 if z[n] < (-boxsize*0.5):
                         z[n] = z[n] + boxsize
-                if y[n] >= (boxsize*0.5):
+                if z[n] >= (boxsize*0.5):
                         z[n] = z[n] - boxsize
 
 def steepest_descent(Ax, Ay, Az, Ntotal, x, y, z):
