@@ -1,0 +1,229 @@
+# READ ME - INSTRUCTIONS
+
+#!!!!!! Selection issue discoverd. I am working on a fix - Tomi
+
+# 1. To start the simulation you only need to run this script.
+# 2. To configure the simulations ONLY EDIT section labelled as PARAMETERS.
+# 3. To change the output file format change the Truth Values in the OUTPUT OPTIONS section. Only one file can be written at a time.
+# 4. At the very bottom in the DEFINE SCRIPT section you may remove a hashtag to perform a script
+
+import numpy as np
+import time
+
+starttime = time.time()
+
+# PARAMETERS
+# Give initial values here for forces and particles below
+
+mass = 1  # masses of particles
+r_0 = 1  # equilibrium bond length for harmonic force
+U = 100  # some parameter for harmonic force
+sigma = 1  # Lennard jones parameter
+epsilon = 1  # Lennard jones parameter
+LJ_cutoff = 2.5 * sigma
+periodic_boundaries = True  # using periodic boundaries or not?
+xwidth = 25  # boundary sizes
+ywidth = 25
+zwidth = 25
+limits = np.array([xwidth, ywidth, 2 ** 63])  # 2**63 or any large number representing infinite dimension!
+
+# Give simulation parameters below
+dt = 0.0001  # timestep
+steps = 1000  # number of steps
+n = 60      # number of particles should be even
+saveInterval = 100 # the interval of saved simulation steps
+
+# END_PARAMETERS
+
+# OUTPUT_OPTIONS
+vmd = True
+csv = False
+if vmd:
+    file = open("vmd.xyz", "w")
+elif csv:
+    file = open("csv.csv", "w")
+
+#END_OUTPUT_OPTIONS
+
+# DO NOT CHANGE
+# initialise arrays for values with n times 3dimensional coordinates, type is a 64bit float
+pos = np.zeros((n, 3), dtype=np.float64)
+vel = np.zeros((n, 3), dtype=np.float64)
+forces = np.zeros((n, 3), dtype=np.float64)
+
+
+def generate_random_with_enough_spacing(n_generate, positions, velocities, mindist=1.0 * sigma, maxdist=2.0 * sigma):
+    made = 0
+    while made < n_generate:
+        random_position = np.random.rand(3)
+        random_position[0] *= xwidth
+        random_position[1] *= ywidth
+        random_position[2] *= zwidth  # place particles inside boundaries
+        # test if particle too far or close to other particles
+        ok = False
+        for i9 in range(n_generate):
+            distance = np.linalg.norm(random_position - positions[i9])
+            if distance < mindist:
+                # print("Particle {0} too close to some particle @ {1}".format(made, random_position))
+                break
+            elif maxdist > distance > mindist:
+                ok = True
+            if i9 == n_generate - 1 and ok:  # no collision after checks and withint good range to atleast one particle
+                positions[made] = random_position  # place particle to the position
+                velocities[made] = np.array([random.uniform(-1,1), random.uniform(-1,1), random.uniform(-1,1)])
+                made += 1
+
+                
+def harmonic_force(pos1, pos2):
+    vector_distance = distancevector(pos1, pos2)
+    scalar_distance = np.linalg.norm(vector_distance)
+    scalar_force = 2 * U * (scalar_distance - r_0)
+    vector_force = scalar_force * vector_distance / scalar_distance
+    return vector_force
+
+
+def lennard_jones_force(pos1, pos2):
+    vector_distance = distancevector(pos2, pos1)
+    scalar_distance = np.linalg.norm(vector_distance)
+    if scalar_distance > LJ_cutoff:
+        return np.zeros(3)  # return a zerovector
+    r = scalar_distance
+    scalar_force = 4 * epsilon * (((sigma / r) ** 12) - ((sigma / r) ** 6))
+    vector_force = vector_distance / scalar_distance * scalar_force
+    return vector_force
+
+
+def output_vmd():
+    file.write("{0} \n\n".format(n))
+    # print(pos)
+    for particle in pos:
+        # print(particle)
+        file.write("N {0} {1} {2}\n".format(particle[0], particle[1], particle[2]))
+
+
+def output_csv():
+    # implement output for kinetic and potential energy
+    # calculate kinetic energy:
+    E_kinetic = np.cumsum(0.5 * mass * np.power(vel, 2))
+    E_potential = 0
+    file.write("{0};{1}")  # separated by ; (can be read by excel)
+
+
+def distancevector(loc1, loc2, boundaries=False):
+    difference = loc2 - loc1
+    if not boundaries:  # when no PBC needed
+        return difference
+    else:  # when periodic boundary conditions are in effect:
+        if abs(difference[0]) > xwidth / 2:
+            difference[0] = - np.sign(difference[0]) * (xwidth - difference[0])
+
+        if abs(difference[1]) > ywidth / 2:
+            difference[1] = - np.sign(difference[1]) * (ywidth - difference[1])
+            
+        if abs(difference[2]) > zwidth / 2:
+            difference[2] = - np.sign(difference[2]) * (zwidth - difference[1])
+        return difference
+
+
+def apply_periodic_boundary_conditions(position):
+    if position[0] < 0:
+        position[0] = xwidth - position[0]
+    elif position[0] > xwidth:
+        position[0] = position[0] - xwidth
+    if position[1] < 0:
+        position[1] = ywidth - position[1]
+    elif position[1] > ywidth:
+        position[1] = position[1] - ywidth
+    if position[2] < 0:
+        position[2] = zwidth - position[2]
+    elif position[2] > zwidth:
+        position[2] = position[2] - zwidth
+
+
+def calculate_LJ_between_all():
+    # add LJ forces for every particle
+    for i in range(n - 1):  # from first to second last
+        for i2 in range((i + 1), n):  # from current particle to last
+            LJ_between = lennard_jones_force(pos[i], pos[i2])
+            forces[i] += LJ_between
+            forces[i2] -= LJ_between  # "add" the opposite vector
+
+
+def mimimise():
+    global pos
+    global forces
+    # start with zero forces:
+    forces = np.zeros((n, 3), dtype=np.float64)
+    # calculate forces
+    calculate_LJ_between_all()
+    # steepest
+    maxforce_scalar=np.max(np.linalg.norm(forces, axis=1))
+    pos += forces / (mass * maxforce_scalar) * dt
+
+
+def progress_list():
+    global pos
+    global forces
+    global vel
+    
+    calculate_LJ_between_all()
+    vel = vel + forces / mass * dt
+    pos += vel * dt
+    
+    for particle in pos:
+        i = 0
+        for i in range (len(pos)) :
+            apply_periodic_boundary_conditions(pos[i])
+            i += 1
+    
+#FIX UNDERWAY
+def progress_linked_cell():
+    a = 0
+    
+    
+print("Generating {0} initial particle positions".format(n))
+# generate_particles(n, pos, vel) # generate 10 random particles
+generate_random_with_enough_spacing(n, pos, vel)
+
+step = 0
+# simulation loop
+print("Going to simulate {0} steps!".format(steps))
+while step < steps:
+
+    # output state
+    if ((step % saveInterval) == 0):
+        if vmd:
+            output_vmd()
+            print(step/steps)
+        else:
+            output_csv()
+    # zero the forces before calculating new ones!
+    # forces = np.zeros((n, 3), dtype=np.float64)
+    # calculate harmonic forces for every "molecule"
+    # for i in range(int(n/2)):
+    #     force_between_pair = harmonic_force(pos[i], pos[i+1])
+    #     forces[i*2] = force_between_pair
+    #     forces[i*2+1] = -force_between_pair
+    # add LJ forces for every particle
+    # for i in range(n - 1):  # from first to second last
+    #     for i2 in range((i + 1), n):  # from current particle to last
+    #         LJ_between = lennard_jones_force(pos[i], pos[i2])
+    #         forces[i] += LJ_between
+    #         forces[i2] -= LJ_between  # "add" the opposite vector
+    # update velocity
+    #vel = vel + forces / mass * dt
+    # update positions
+    #pos += vel * dt
+    # apply periodic boundary conditions
+    # for i in range(n):
+    #    if periodic_boundaries:
+    #        apply_periodic_boundary_conditions(pos[i])
+    # print("Step {0}".format(step))
+    
+    # DEFINE SCRIPT
+    
+    #mimimise()
+    #progress_list()
+    progress_linked_cell()
+    step += 1
+print("\nFinished! Time: {0} s".format(time.time() - starttime))
