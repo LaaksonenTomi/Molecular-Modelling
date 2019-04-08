@@ -1,0 +1,108 @@
+#Linked List Algorithm Initialization
+#divide space i < (L/rcl)**3
+
+#Parameters
+L = 3
+rcl = 1
+
+#Splitting the cube into boxes
+numberBoxes = int((L/rcl)**3)
+
+boxesSplit = []
+zBoxID = 0
+while (zBoxID < L/rcl):
+    yBoxID = 0
+    while (yBoxID < L/rcl):
+        xBoxID = 0
+        while (xBoxID < L/rcl):
+            boxesSplit.append((xBoxID,yBoxID,zBoxID))
+            xBoxID += 1
+        yBoxID += 1
+    zBoxID += 1
+
+#Create a list of BoxPairs
+# [(L/rcl)**3, 13]
+i = 0
+
+boxPairs = []
+while i < numberBoxes:
+    xBoxID = boxesSplit[i][0]
+    yBoxID = boxesSplit[i][1]
+    zBoxID = boxesSplit[i][2]
+    boxID1 =  (xBoxID    ,yBoxID + 1,zBoxID    )
+    boxID2 =  (xBoxID + 1,yBoxID + 1,zBoxID    )
+    boxID3 =  (xBoxID + 1,yBoxID    ,zBoxID    )
+    boxID4 =  (xBoxID + 1,yBoxID - 1,zBoxID    )
+    boxID5 =  (xBoxID - 1,yBoxID + 1,zBoxID + 1)
+    boxID6 =  (xBoxID - 1,yBoxID    ,zBoxID + 1)
+    boxID7 =  (xBoxID - 1,yBoxID - 1,zBoxID + 1)
+    boxID8 =  (xBoxID    ,yBoxID + 1,zBoxID + 1)
+    boxID9 =  (xBoxID    ,yBoxID    ,zBoxID + 1)
+    boxID10 = (xBoxID    ,yBoxID - 1,zBoxID + 1)
+    boxID11 = (xBoxID + 1,yBoxID + 1,zBoxID + 1)
+    boxID12 = (xBoxID + 1,yBoxID    ,zBoxID + 1)
+    boxID13 = (xBoxID + 1,yBoxID - 1,zBoxID + 1)
+    boxIDs = ([boxID1,boxID2,boxID3,boxID4,boxID5,boxID6,boxID7,boxID8,boxID9,boxID10,boxID11,boxID12,boxID13])
+    #print(boxIDs)
+    boxPairs.append(boxIDs)
+    i += 1
+
+#Store displament vectors for each of the 13 boxes in the cell; vector: Box to Box
+displacementVectors = []
+displacements1 = [0,rcl,0]
+displacements2 = [rcl,rcl,0]
+displacements3 = [rcl,0,0]
+displacements4 = [rcl,-rcl,0]
+displacements5 = [-rcl,rcl,rcl]
+displacements6 = [-rcl,0,rcl]
+displacements7 = [-rcl,-rcl,rcl]
+displacements8 = [0,rcl,rcl]
+displacements9 = [0,0,rcl]
+displacements10 = [0,-rcl,rcl]
+displacements11 = [rcl,rcl,rcl]
+displacements12 = [rcl,0,rcl]
+displacements13 = [rcl,-rcl,rcl]
+displacements = (displacements1, displacements2, displacements3, displacements4, displacements5, displacements6, displacements7, displacements8, displacements9, displacements10, displacements11,displacements12,displacements13)
+displacementVectors.append(displacements)
+
+
+#create a list of corner vectors [(L/rcl)**3]
+# [(L/rcl)**3] vectors
+boxCornerVectors = []
+z = 0
+while (z < L):
+    y = 0
+    while (y < L):
+        x = 0
+        while (x < L):
+            boxCornerVectors.append([x,y,z])
+            x += rcl
+        y += rcl
+    z += rcl
+
+# cornerVectors.append(x,y,z)
+
+#create an Array for all (L/rcl)**3
+#[(x,y,z)] cartesian
+boxPosition = []
+z = 0
+while (z < L):
+    y = 0
+    while (y < L):
+        x = 0
+        while (x < L):
+            boxPosition.append((x,y,z))
+            x += rcl
+        y += rcl
+    z += rcl
+
+print("\n Number of Boxes \n")
+print(numberBoxes)
+print("\n Box Pairs \n")
+print(boxPairs)
+print("\n Displacement Vectors \n")
+print(displacementVectors)
+print("\n Box Corner Vectors \n")
+print(boxCornerVectors)
+print("\n Box Positions (x,y,z) \n")
+print(boxPosition)
