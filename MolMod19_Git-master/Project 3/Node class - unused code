@@ -1,0 +1,70 @@
+#Node used as a "Box" the linked cell algorithm
+class Node:
+    #ini sequence
+    def __init__(self, dataval=None):
+        self.dataval = dataval
+        self.nextval = None
+
+#A linked list made up of nodes
+class LinkedList:
+    #ini sequence
+    def __init__(self):
+        self.headval = None
+    
+    #print the whole linked list head -> tail
+    def listprint(self):
+        printval = self.headval
+        while printval is not None:
+            print (printval.dataval)
+            printval = printval.nextval
+    
+    #Add a new head, the previous head will become the second value
+    def AtBegining(self,newdata):
+        NewNode = Node(newdata)
+    
+    #Add a new tail, the previous tail will become the second to last value
+    def AtEnd(self, newdata):
+        NewNode = Node(newdata)
+        if self.headval is None:
+            self.headval = NewNode
+            return
+        laste = self.headval
+        while(laste.nextval):
+            laste = laste.nextval
+        laste.nextval=NewNode
+    
+    #Insert a new node between to indexed nodes
+    def Inbetween(self,middle_node,newdata):
+        if middle_node is None:
+            print("The mentioned node is absent")
+            return
+
+        NewNode = Node(newdata)
+        NewNode.nextval = middle_node.nextval
+        middle_node.nextval = NewNode
+    
+    #Remove a specified node
+    def RemoveNode(self, Removekey):
+
+        HeadVal = self.head
+
+        if (HeadVal is not None):
+            if (HeadVal.data == Removekey):
+                self.head = HeadVal.next
+                HeadVal = None
+                return
+
+        while (HeadVal is not None):
+            if HeadVal.data == Removekey:
+                break
+            prev = HeadVal
+            HeadVal = HeadVal.next
+
+        if (HeadVal == None):
+            return
+
+        prev.next = HeadVal.next
+
+        HeadVal = None
+        
+    
