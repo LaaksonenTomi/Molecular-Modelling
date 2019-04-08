@@ -181,9 +181,50 @@ def progress_list():
             apply_periodic_boundary_conditions(pos[i])
             i += 1
     
-#FIX UNDERWAY
+#NEIGHTBOURS IN PROGRESS
 def progress_linked_cell():
-    a = 0
+    global pos
+    global forces
+    global vel
+    
+    # Create a linked array for particles in boxes
+    linkedArray = []
+    indexBox = 0
+    
+    #Put particles into boxes
+    for indexBox in range (len(boxPairs)) :
+        boxArray = []
+        
+        #Go through particles
+        for indexParticle in range (len(pos)) :
+            if ((boxPosition[indexBox][0] <= pos[indexParticle][0] < (boxPosition[indexBox][0] + rcl)) and (boxPosition[indexBox][1] <= pos[indexParticle][1] < (boxPosition[indexBox][1] + rcl)) and (boxPosition[indexBox][2] <= pos[indexParticle][2] < (boxPosition[indexBox][2] + rcl))):
+                boxArray.append(indexParticle)
+            indexParticle += 1
+        linkedArray.append(boxArray)
+        indexBox += 1
+
+    #Go through particles and calculate forces
+    indexBox = 0
+    
+    while indexBox < numberBoxes:
+        
+        #particles in the same box
+        indexParticle = 0
+        for indexParticle in range(len(linkedArray[indexBox] - 1)):
+            
+            indexParticle2 = 1
+            for indexParticle2 in range(len(linkedArray[indexBox])):
+                LJ_between = lennard_jones_force(pos(linkedArray[indexBox][indexParticle]), pos(linkedArray[indexBox][indexParticle]))
+                indexParticle += 1
+                forces[indexParticle] += LJ_between
+                forces[indexParticle] -= LJ_between
+            
+            indexParticle += 1
+            
+        #particles in the neighbouring boxes
+    #Replace old position
+    vel = vel + forces / mass * dt
+    pos += vel * dt
 
 #_________INI_________
 
