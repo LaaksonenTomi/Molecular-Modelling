@@ -185,7 +185,7 @@ def progress_list():
 def progress_linked_cell():
     a = 0
 
-_________INI_________
+#_________INI_________
 
 #divide space i < (L/rcl)**3
 
@@ -280,7 +280,7 @@ while (z < L):
         y += rcl
     z += rcl
     
-_________MAIN_________
+#_________MAIN_________
     
 print("Generating {0} initial particle positions".format(n))
 # generate_particles(n, pos, vel) # generate 10 random particles
