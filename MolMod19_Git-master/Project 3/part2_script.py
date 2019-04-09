@@ -28,7 +28,7 @@ periodic_boundaries = True  # using periodic boundaries or not?
 xwidth = L  # boundary sizes
 ywidth = L
 zwidth = L
-limits = np.array([xwidth, ywidth, 2 ** 63])  # 2**63 or any large number representing infinite dimension!
+limits = np.array([xwidth, ywidth, zwidth, 2 ** 63])  # 2**63 or any large number representing infinite dimension!
 
 # Give simulation parameters below
 dt = 0.0001  # timestep
