@@ -3,7 +3,7 @@
 # 1. To start the simulation you only need to run this script.
 # 2. To configure the simulations ONLY EDIT section labelled as PARAMETERS.
 # 3. To change the output file format change the Truth Values in the OUTPUT OPTIONS section. Only one file can be written at a time.
-# 4. At the very bottom in the DEFINE SCRIPT section you may add or remove a hashtag, which disables the line, to perform a script. Only run a single script at a time.
+# 4. At the very bottom in the DEFINE SCRIPT section you may remove a hashtag to perform a script
 
 import numpy as np
 import random
@@ -28,7 +28,7 @@ periodic_boundaries = True  # using periodic boundaries or not?
 xwidth = L  # boundary sizes
 ywidth = L
 zwidth = L
-limits = np.array([xwidth, ywidth, zwidth, 2 ** 63])  # 2**63 or any large number representing infinite dimension!
+limits = np.array([xwidth, ywidth, 2 ** 63])  # 2**63 or any large number representing infinite dimension!
 
 # Give simulation parameters below
 dt = 0.0001  # timestep
