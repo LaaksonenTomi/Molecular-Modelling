@@ -16,7 +16,7 @@ starttime = time.time()
 # PARAMETERS
 # Give initial values here for forces and particles below
 
-L = 25 # Box side length 
+L = 25 # Box side length
 rcl = 1 # Latice Cut Off
 mass = 1  # masses of particles
 r_0 = 1  # equilibrium bond length for harmonic force
@@ -33,7 +33,7 @@ limits = np.array([xwidth, ywidth, 2 ** 63])  # 2**63 or any large number repres
 # Give simulation parameters below
 dt = 0.0001  # timestep
 steps = 1000  # number of steps
-n = 60      # number of particles should be even
+n = 64      # number of particles should be even
 saveInterval = 100 # the interval of saved simulation steps
 
 # END_PARAMETERS
@@ -76,7 +76,7 @@ def generate_random_with_enough_spacing(n_generate, positions, velocities, mindi
                 velocities[made] = np.array([random.uniform(-1,1), random.uniform(-1,1), random.uniform(-1,1)])
                 made += 1
 
-                
+
 def harmonic_force(pos1, pos2):
     vector_distance = distancevector(pos1, pos2)
     scalar_distance = np.linalg.norm(vector_distance)
@@ -122,7 +122,7 @@ def distancevector(loc1, loc2, boundaries=False):
 
         if abs(difference[1]) > ywidth / 2:
             difference[1] = - np.sign(difference[1]) * (ywidth - difference[1])
-            
+
         if abs(difference[2]) > zwidth / 2:
             difference[2] = - np.sign(difference[2]) * (zwidth - difference[1])
         return difference
@@ -168,11 +168,11 @@ def progress_list():
     global pos
     global forces
     global vel
-    
+
     calculate_LJ_between_all()
     vel = vel + forces / mass * dt
     pos += vel * dt
-    
+
     for particle in pos:
         i = 0
         for i in range (len(pos)) :
@@ -183,23 +183,23 @@ def progress_linked_cell():
     global pos
     global forces
     global vel
-    
+
     # Create a linked array for particles in boxes
     linkedArray = []
     linkedArrayLength = []
     indexBox = 0
-    
+
     #Put particles into boxes
     for indexBox in range (len(boxPairs)) :
         boxArray = []
-        
+
         #Go through particles
         indexParticle = 0
         for indexParticle in range (len(pos)) :
             if ((boxPosition[indexBox][0] <= pos[indexParticle][0] < (boxPosition[indexBox][0] + rcl)) and (boxPosition[indexBox][1] <= pos[indexParticle][1] < (boxPosition[indexBox][1] + rcl)) and (boxPosition[indexBox][2] <= pos[indexParticle][2] < (boxPosition[indexBox][2] + rcl))):
                 boxArray.append(indexParticle)
                 indexParticle += 1
-                
+
         linkedArray.append(boxArray)
         length = len(boxArray)
         linkedArrayLength.append(length)
@@ -208,38 +208,38 @@ def progress_linked_cell():
     #Go through particles and calculate forces
     indexBox = 0
     while indexBox < numberBoxes:
-        
+
         #calculate forces for particles
         indexParticle = 0
         for indexParticle in range(linkedArrayLength[indexBox] - 1):
-            
+
             #particles in the same box
             indexParticle2 = 1
             for indexParticle2 in range(linkedArrayLength[indexBox]):
-                LJ_between = lennard_jones_force(pos(linkedArray[indexBox][indexParticle]), pos(linkedArray[indexBox][indexParticle2]))
+                LJ_between = lennard_jones_force(pos[linkedArray[indexBox][indexParticle]], pos[linkedArray[indexBox][indexParticle]])
                 indexParticle2 += 1
                 forces[indexParticle] += LJ_between
                 forces[indexParticle2] -= LJ_between
-        
-        
+
+
             #particles in the neighbouring boxes for the same particle
             indexNeightbour = 0
             neightboursAfterFirst = 12
             for indexNeightbour in range(neightboursAfterFirst):
-                
+
                 indexParticle2 = 0
-                while indexParticle2 < linkedArrayLenght[indexNeightbour]:
-    
-                    LJ_between = lennard_jones_force(pos(linkedArray[indexBox][indexParticle]), pos(linkedArray[indexNeightbour][indexParticle2]))
+                while indexParticle2 < linkedArrayLength[indexNeightbour]:
+
+                    LJ_between = lennard_jones_force(pos[linkedArray[indexBox][indexParticle]], pos[linkedArray[indexNeightbour][indexParticle2]])
                     forces[indexParticle] += LJ_between
                     forces[linkedArray[indexNeightbour][indexParticle2]] -= LJ_between
-                
-                    IndexParticle2 += 1
-                
+
+                    indexParticle2 += 1
+
                 indexNeightbour += 1
-                
+
             indexParticle += 1
-            
+
         indexBox += 1
     #Replace old position
     vel = vel + forces / mass * dt
@@ -340,9 +340,9 @@ while (z < L):
             x += rcl
         y += rcl
     z += rcl
-    
+
 #_________MAIN_________
-    
+
 print("Generating {0} initial particle positions".format(n))
 # generate_particles(n, pos, vel) # generate 10 random particles
 generate_random_with_enough_spacing(n, pos, vel)
@@ -356,34 +356,34 @@ while step < steps:
     if ((step % saveInterval) == 0):
         if vmd:
             output_vmd()
-            print(step/steps)
+            print("Step {0}".format(step))
         else:
             output_csv()
     # zero the forces before calculating new ones!
-    # forces = np.zeros((n, 3), dtype=np.float64)
+    forces = np.zeros((n, 3), dtype=np.float64)
     # calculate harmonic forces for every "molecule"
-    # for i in range(int(n/2)):
-    #     force_between_pair = harmonic_force(pos[i], pos[i+1])
-    #     forces[i*2] = force_between_pair
-    #     forces[i*2+1] = -force_between_pair
+    for i in range(int(n/2)):
+        force_between_pair = harmonic_force(pos[i], pos[i+1])
+        forces[i*2] = force_between_pair
+        forces[i*2+1] = -force_between_pair
     # add LJ forces for every particle
-    # for i in range(n - 1):  # from first to second last
-    #     for i2 in range((i + 1), n):  # from current particle to last
-    #         LJ_between = lennard_jones_force(pos[i], pos[i2])
-    #         forces[i] += LJ_between
-    #         forces[i2] -= LJ_between  # "add" the opposite vector
+    for i in range(n - 1):  # from first to second last
+        for i2 in range((i + 1), n):  # from current particle to last
+            LJ_between = lennard_jones_force(pos[i], pos[i2])
+            forces[i] += LJ_between
+            forces[i2] -= LJ_between  # "add" the opposite vector
     # update velocity
-    #vel = vel + forces / mass * dt
+    vel = vel + forces / mass * dt
     # update positions
-    #pos += vel * dt
+    pos += vel * dt
     # apply periodic boundary conditions
-    # for i in range(n):
-    #    if periodic_boundaries:
-    #        apply_periodic_boundary_conditions(pos[i])
-    # print("Step {0}".format(step))
-    
+    for i in range(n):
+        if periodic_boundaries:
+            apply_periodic_boundary_conditions(pos[i])
+    #print("Step {0}".format(step))
+
     # DEFINE SCRIPT
-    
+
     #mimimise()
     #progress_list()
     progress_linked_cell()
