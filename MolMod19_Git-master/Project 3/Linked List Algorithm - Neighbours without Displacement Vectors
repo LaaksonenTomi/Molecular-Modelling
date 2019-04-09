@@ -216,7 +216,7 @@ def progress_linked_cell():
             #particles in the same box
             indexParticle2 = 1
             for indexParticle2 in range(linkedArrayLength[indexBox]):
-                LJ_between = lennard_jones_force(pos(linkedArray[indexBox][indexParticle]), pos(linkedArray[indexBox][indexParticle]))
+                LJ_between = lennard_jones_force(pos(linkedArray[indexBox][indexParticle]), pos(linkedArray[indexBox][indexParticle2]))
                 indexParticle2 += 1
                 forces[indexParticle] += LJ_between
                 forces[indexParticle2] -= LJ_between
