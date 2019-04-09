@@ -362,30 +362,30 @@ while step < steps:
     # zero the forces before calculating new ones!
     forces = np.zeros((n, 3), dtype=np.float64)
     # calculate harmonic forces for every "molecule"
-    for i in range(int(n/2)):
-        force_between_pair = harmonic_force(pos[i], pos[i+1])
-        forces[i*2] = force_between_pair
-        forces[i*2+1] = -force_between_pair
+    #for i in range(int(n/2)):
+        #force_between_pair = harmonic_force(pos[i], pos[i+1])
+        #forces[i*2] = force_between_pair
+        #forces[i*2+1] = -force_between_pair
     # add LJ forces for every particle
-    for i in range(n - 1):  # from first to second last
-        for i2 in range((i + 1), n):  # from current particle to last
-            LJ_between = lennard_jones_force(pos[i], pos[i2])
-            forces[i] += LJ_between
-            forces[i2] -= LJ_between  # "add" the opposite vector
+    #for i in range(n - 1):  # from first to second last
+        #for i2 in range((i + 1), n):  # from current particle to last
+            #LJ_between = lennard_jones_force(pos[i], pos[i2])
+            #forces[i] += LJ_between
+            #forces[i2] -= LJ_between  # "add" the opposite vector
     # update velocity
-    vel = vel + forces / mass * dt
+    #vel = vel + forces / mass * dt
     # update positions
-    pos += vel * dt
-    # apply periodic boundary conditions
-    for i in range(n):
-        if periodic_boundaries:
-            apply_periodic_boundary_conditions(pos[i])
+    #pos += vel * dt
+    ## apply periodic boundary conditions
+    #for i in range(n):
+    #    if periodic_boundaries:
+    #        apply_periodic_boundary_conditions(pos[i])
     #print("Step {0}".format(step))
 
     # DEFINE SCRIPT
 
     #mimimise()
-    #progress_list()
+    progress_list()
     progress_linked_cell()
     step += 1
 print("\nFinished! Time: {0} s".format(time.time() - starttime))
