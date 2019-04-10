@@ -448,6 +448,7 @@ while step < steps:
             
         #for diffusion coefficients:
         i = 0
+        print("\n")
         print(step*dt)
         for i in range (len(pos)) :
             origo = [0,0,0]
