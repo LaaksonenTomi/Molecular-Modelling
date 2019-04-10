@@ -1,0 +1,22 @@
+#Add one of both in the main
+
+def apply_periodic_boundary_conditions(position):
+    while position[0] < 0 or position[0] > xwidth:
+        if position[0] < 0:
+            position[0] = xwidth - position[0]
+        elif position[0] > xwidth:
+            position[0] = position[0] - xwidth
+        
+    while position[1] < 0 or position[1] > ywidth:
+        if position[1] < 0:
+            position[1] = ywidth - position[1]
+        elif position[1] > ywidth:
+            position[1] = position[1] - ywidth
+        
+    while position[2] < 0 or position[2] > ywidth:
+        if position[2] < 0:
+            position[2] = zwidth - position[2]
+        elif position[2] > zwidth:
+            position[2] = position[2] - zwidth
+
+
