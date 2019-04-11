@@ -490,10 +490,10 @@ while step < steps:
     kinetic_particle = np.sum(E_kinetic, axis=1)
     kinetic_sum = np.sum(kinetic_particle)
     ke_adj = resamplekin(kinetic_sum,ke,3,tau)
-    alpha = ke_adj/kinetic_sum
+    alpha = np.sqrt(ke_adj)
     #alpha = 1
-    #progress_list()
-    progress_linked_cell()
+    progress_list()
+    #progress_linked_cell()
     step += 1
 print("\nFinished! Time: {0} s".format(time.time() - starttime))
 
