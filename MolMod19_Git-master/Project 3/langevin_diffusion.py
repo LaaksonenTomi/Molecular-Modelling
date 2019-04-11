@@ -490,8 +490,8 @@ while step < steps:
     # alpha = ke_adj/kinetic_sum
     #alpha = kinetic_sum/ke_adj
 
-    if ((step % saveInterval) == 0):
-        print kinetic_sum
+   # if ((step % saveInterval) == 0):
+    #    print kinetic_sum
     progress_list()
     #progress_linked_cell()
     step += 1
