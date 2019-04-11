@@ -414,8 +414,8 @@ while step < steps:
     kinetic_sum = np.sum(kinetic_particle)
     #alpha = np.sqrt((1+(((2*ke)/kinetic_sum)-1))*(dt/tau))
     alpha = 1
-    if ((step % saveInterval) == 0):
-        print kinetic_sum, alpha
+   # if ((step % saveInterval) == 0):
+    #    print kinetic_sum, alpha
     progress_list()
     #progress_linked_cell()
     step += 1
